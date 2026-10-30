@@ -12,7 +12,7 @@
   --accent-glow: rgba(0, 212, 170, 0.45);
   --cyan: #7ee7ff;
   --purple: #b388ff;
-  --panel-bg: rgba(14, 14, 22, 0.92);
+  --panel-bg: rgba(14, 14, 22, 0.9);
   --panel-border: rgba(255, 255, 255, 0.14);
   --input-bg: rgba(10, 10, 16, 0.9);
   --input-border: rgba(255, 255, 255, 0.15);
@@ -372,61 +372,6 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 18px;
-}
-
-/* ============================================================
-   Preset Grid & Preset Cards
-   ============================================================ */
-
-.preset-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.preset-btn {
-  background: var(--input-bg);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius-sm);
-  padding: 9px 10px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  text-align: left;
-  transition: all var(--transition);
-  font-family: inherit;
-}
-
-.preset-btn:hover {
-  border-color: var(--cyan);
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-1px);
-}
-
-.preset-btn.active {
-  border-color: var(--accent);
-  background: rgba(0, 212, 170, 0.12);
-  box-shadow: 0 0 12px var(--accent-dim);
-}
-
-.preset-icon {
-  font-size: 15px;
-  margin-bottom: 2px;
-}
-
-.preset-name {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #ffffff;
-}
-
-.preset-desc {
-  font-size: 9px;
-  color: var(--muted);
-  line-height: 1.25;
 }
 
 /* ============================================================
