@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="High-performance interactive particle portrait simulation with image-to-particle generation, physics turbulence, ambient dust, and recording.">
+  <title>Particle Portrait - Interactive Particle Simulation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Simulation Stage -->
+  <main id="stage">
+    <canvas id="canvas" aria-label="Particle Portrait Canvas"></canvas>
+  </main>
+
+  <!-- Top Floating Action Pills -->
+  <button class="pill" id="toggle-controls" aria-label="Toggle Controls Panel" aria-expanded="true">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="4" y1="21" x2="4" y2="14"></line>
+      <line x1="4" y1="10" x2="4" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="12"></line>
+      <line x1="12" y1="8" x2="12" y2="3"></line>
+      <line x1="20" y1="21" x2="20" y2="16"></line>
+      <line x1="20" y1="12" x2="20" y2="3"></line>
+      <line x1="1" y1="14" x2="7" y2="14"></line>
+      <line x1="9" y1="8" x2="15" y2="8"></line>
+      <line x1="17" y1="16" x2="23" y2="16"></line>
+    </svg>
+    <span>Controls</span>
+  </button>
+
+  <button class="pill load-demo-btn" id="demo-portrait-pill" aria-label="Load Demo Portrait">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+      <circle cx="12" cy="7" r="4"></circle>
+    </svg>
+    <span>Demo Portrait</span>
+  </button>
+
+  <label class="pill" id="quick-upload-pill" aria-label="Upload Custom Image">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+      <polyline points="17 8 12 3 7 8"></polyline>
+      <line x1="12" y1="3" x2="12" y2="15"></line>
+    </svg>
+    <span>Upload Image</span>
+    <input type="file" id="f" accept="image/*" hidden>
+  </label>
+
+  <!-- Interactive Control Panel -->
+  <aside id="controls" class="panel open" role="region" aria-label="Simulation Settings">
+    <div class="panel-header">
+      <div class="panel-title">
+        <h2>Particle Portrait</h2>
+        <span class="badge">PRO</span>
+      </div>
+      <div class="panel-header-actions">
+        <button id="replay-btn" class="icon-btn" title="Replay Entrance Animation (Space)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="controls-content">
+      <!-- Section 1: Image & Palette -->
+      <section class="control-group">
+        <div class="section-title">Image &amp; Palette</div>
+
+        <div class="btn-row">
+          <label class="btn btn-primary file-input-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>Upload Image</span>
+            <input type="file" id="file-input" accept="image/*" hidden>
+          </label>
+          <button type="button" class="btn load-demo-btn">Demo</button>
+        </div>
+
+        <div class="control-group" style="margin-top: 4px;">
+          <label for="palette-mode" class="control-label"><span>Palette Mode</span></label>
+          <select id="palette-mode">
+            <option value="original">Original + Tints</option>
+            <option value="mono">Monochrome (Silver/White)</option>
+            <option value="aurora">Aurora (Prismatic HSL)</option>
+            <option value="ember">Ember (Fiery Gold Glow)</option>
+          </select>
+        </div>
+
+        <label class="checkbox-label" style="margin-top: 4px;">
+          <span>Auto-remove Backdrop</span>
+          <input type="checkbox" id="auto-backdrop" checked>
+        </label>
+      </section>
+
+      <!-- Section 2: Dynamics & Flow -->
+      <section class="control-group">
+        <div class="section-title">Particle Dynamics</div>
+
+        <div class="control-group">
+          <label for="spacing" class="control-label">
+            <span>Spacing (Density)</span>
+            <output id="spacing-val">3.0</output>
+          </label>
+          <input type="range" id="spacing" min="2.5" max="8" step="0.5" value="3">
+        </div>
+
+        <div class="control-group">
+          <label for="size" class="control-label">
+            <span>Particle Size</span>
+            <output id="size-val">1.6</output>
+          </label>
+          <input type="range" id="size" min="0.8" max="5" step="0.1" value="1.6">
+        </div>
+
+        <div class="control-group">
+          <label for="radius" class="control-label">
+            <span>Hover Radius</span>
+            <output id="radius-val">40</output>
+          </label>
+          <input type="range" id="radius" min="15" max="160" step="1" value="40">
+        </div>
+
+        <div class="control-group">
+          <label for="soft" class="control-label">
+            <span>Edge Softness</span>
+            <output id="soft-val">0.5</output>
+          </label>
+          <input type="range" id="soft" min="0" max="1" step="0.05" value="0.5">
+        </div>
+
+        <div class="control-group">
+          <label for="lift" class="control-label">
+            <span>Lift Height</span>
+            <output id="lift-val">1.0</output>
+          </label>
+          <input type="range" id="lift" min="0.2" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+          <label for="speed" class="control-label">
+            <span>Flow Speed</span>
+            <output id="speed-val">1.0</output>
+          </label>
+          <input type="range" id="speed" min="0.3" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+          <label for="jitter" class="control-label">
+            <span>Particle Jitter</span>
+            <output id="jitter-val">1.0</output>
+          </label>
+          <input type="range" id="jitter" min="0" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+          <label for="shimmer" class="control-label">
+            <span>Shimmer Modulation</span>
+            <output id="shimmer-val">1.0</output>
+          </label>
+          <input type="range" id="shimmer" min="0" max="2" step="0.1" value="1">
+        </div>
+      </section>
+
+      <!-- Section 3: Atmosphere & Color -->
+      <section class="control-group">
+        <div class="section-title">Atmosphere &amp; Color</div>
+
+        <div class="control-group">
+          <label for="fuzz" class="control-label">
+            <span>Ambient Dust Fuzz</span>
+            <output id="fuzz-val">1.0</output>
+          </label>
+          <input type="range" id="fuzz" min="0" max="2" step="0.05" value="1">
+        </div>
+
+        <div class="control-group">
+          <label for="fuzzSize" class="control-label">
+            <span>Dust Particle Size</span>
+            <output id="fuzzSize-val">1.0</output>
+          </label>
+          <input type="range" id="fuzzSize" min="1" max="4" step="0.5" value="1">
+        </div>
+
+        <div class="control-group">
+          <label for="tint" class="control-label">
+            <span>Tint Variety</span>
+            <output id="tint-val">1.0</output>
+          </label>
+          <input type="range" id="tint" min="0" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+          <label for="spread" class="control-label">
+            <span>Contrast Spread</span>
+            <output id="spread-val">1.0</output>
+          </label>
+          <input type="range" id="spread" min="0" max="2" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+          <label for="bright" class="control-label">
+            <span>Brightness</span>
+            <output id="bright-val">1.15</output>
+          </label>
+          <input type="range" id="bright" min="0.5" max="2" step="0.05" value="1.15">
+        </div>
+
+        <div class="control-group">
+          <label for="cutoff" class="control-label">
+            <span>Dark Threshold</span>
+            <output id="cutoff-val">28</output>
+          </label>
+          <input type="range" id="cutoff" min="0" max="120" step="1" value="28">
+        </div>
+      </section>
+
+      <!-- Section 4: Canvas Sizing & Fit -->
+      <section class="control-group">
+        <div class="section-title">Canvas &amp; Fit</div>
+
+        <div class="control-group">
+          <label class="control-label"><span>Resolution (px)</span></label>
+          <div class="two-col">
+            <input type="number" id="cw" min="100" max="3000" placeholder="Auto Width">
+            <input type="number" id="ch" min="100" max="3000" placeholder="Auto Height">
+          </div>
+        </div>
+
+        <label class="checkbox-label" style="margin-top: 4px;">
+          <span>Lock Aspect Ratio</span>
+          <input type="checkbox" id="keep-ratio" checked>
+        </label>
+
+        <div class="control-group" style="margin-top: 4px;">
+          <label for="fit" class="control-label"><span>Image Fit</span></label>
+          <select id="fit">
+            <option value="contain">Contain (Fit screen)</option>
+            <option value="cover">Cover (Fill &amp; crop)</option>
+            <option value="stretch">Stretch</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn" id="auto-size" style="margin-top: 4px;">
+          <span>Fit Screen (Auto)</span>
+        </button>
+      </section>
+
+      <!-- Section 5: Export & Record -->
+      <section class="control-group">
+        <div class="section-title">Export &amp; Capture</div>
+
+        <div class="btn-row">
+          <button type="button" class="btn" id="export-png-btn">PNG</button>
+          <button type="button" class="btn" id="export-webm-btn">WebM</button>
+          <button type="button" class="btn" id="export-settings-btn">JSON</button>
+        </div>
+
+        <label class="checkbox-label" style="margin-top: 4px;">
+          <span>Transparent PNG</span>
+          <input type="checkbox" id="transparent-png">
+        </label>
+
+        <div class="control-group" style="margin-top: 4px;">
+          <label for="video-seconds" class="control-label"><span>Video Duration (s)</span></label>
+          <input type="number" id="video-seconds" min="2" max="30" value="6">
+        </div>
+
+        <label class="checkbox-label" style="margin-top: 4px;">
+          <span>Record Build-in Entrance</span>
+          <input type="checkbox" id="video-build-in" checked>
+        </label>
+
+        <div class="status-msg" id="export-msg"></div>
+      </section>
+
+      <!-- Section 6: Reset Controls -->
+      <section class="control-group">
+        <button type="button" class="btn" id="reset-btn">Reset Defaults</button>
+      </section>
+    </div>
+
+    <!-- Live Diagnostics Footer -->
+    <div class="panel-footer">
+      <div class="panel-footer-row">
+        <span>Performance</span>
+        <span id="fps-counter">FPS: 60</span>
+      </div>
+      <div class="panel-footer-row">
+        <span>Particle Count</span>
+        <span id="particle-info">Particles: --</span>
+      </div>
+      <div class="panel-footer-row">
+        <span>Stage Buffer</span>
+        <span id="res-info">--</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Bottom Interaction Hint -->
+  <div class="hint" id="hint">Hover cursor over particles &middot; Click &amp; drag &middot; Drop, paste or upload image</div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

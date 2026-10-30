@@ -1,0 +1,569 @@
+/* ============================================================
+   Particle Portrait - Modern Glassmorphism Stylesheet
+   ============================================================ */
+
+:root {
+  --bg: #07070a;
+  --fg: #e8e8ed;
+  --muted: #8e8ea0;
+  --accent: #00d4aa;
+  --accent-hover: #1ae6bd;
+  --accent-dim: rgba(0, 212, 170, 0.16);
+  --accent-glow: rgba(0, 212, 170, 0.35);
+  --cyan: #7ee7ff;
+  --panel-bg: rgba(16, 16, 24, 0.82);
+  --panel-border: rgba(255, 255, 255, 0.12);
+  --input-bg: rgba(10, 10, 16, 0.85);
+  --input-border: rgba(255, 255, 255, 0.15);
+  --btn-secondary: rgba(255, 255, 255, 0.08);
+  --btn-secondary-hover: rgba(255, 255, 255, 0.16);
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  touch-action: none;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ============================================================
+   Canvas Stage & Background
+   ============================================================ */
+
+#stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(circle at center, #0f0f18 0%, #050508 100%);
+  z-index: 1;
+}
+
+#canvas {
+  display: block;
+  margin: auto;
+  cursor: crosshair;
+  touch-action: none;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+}
+
+/* ============================================================
+   Top Action Pills & Floating UI
+   ============================================================ */
+
+.pill {
+  position: fixed;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #cfcfcf;
+  border: 1px solid var(--panel-border);
+  padding: 9px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  background: rgba(12, 12, 18, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all var(--transition);
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.pill:hover {
+  color: #ffffff;
+  border-color: var(--accent);
+  background: rgba(20, 20, 32, 0.85);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--accent-dim);
+}
+
+.pill:active {
+  transform: translateY(0);
+}
+
+#toggle-controls {
+  left: calc(16px + env(safe-area-inset-left, 0px));
+}
+
+#quick-upload-pill {
+  right: calc(16px + env(safe-area-inset-right, 0px));
+}
+
+#demo-portrait-pill {
+  right: calc(160px + env(safe-area-inset-right, 0px));
+}
+
+/* ============================================================
+   Hint Banner
+   ============================================================ */
+
+.hint {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.85;
+  pointer-events: none;
+  transition: opacity 800ms ease;
+  z-index: 10;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+/* ============================================================
+   Drag & Drop Overlay
+   ============================================================ */
+
+body.drag::after {
+  content: "Drop image to create portrait";
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 4, 8, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--accent);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 16px;
+  font-weight: 600;
+  border: 3px dashed var(--accent);
+  margin: 16px;
+  border-radius: 20px;
+  z-index: 999;
+  pointer-events: none;
+}
+
+/* ============================================================
+   Control Panel
+   ============================================================ */
+
+.panel {
+  position: fixed;
+  top: calc(58px + env(safe-area-inset-top, 0px));
+  left: calc(16px + env(safe-area-inset-left, 0px));
+  width: 290px;
+  max-height: calc(100vh - 84px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  background: var(--panel-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  transition: transform var(--transition), opacity var(--transition), visibility var(--transition);
+  opacity: 1;
+  visibility: visible;
+}
+
+.panel.collapsed {
+  transform: translateX(-320px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-title h2 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.panel-title .badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid rgba(0, 212, 170, 0.3);
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.icon-btn:hover {
+  background: var(--btn-secondary);
+  color: #ffffff;
+}
+
+#controls-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ============================================================
+   Section Headings
+   ============================================================ */
+
+.section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================================
+   Form Inputs & Control Groups
+   ============================================================ */
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.control-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.control-label output {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sliders */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 5px;
+  background: var(--input-border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+input[type="range"]:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--accent-glow);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+  box-shadow: 0 0 14px var(--accent);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Select Dropdowns */
+select {
+  width: 100%;
+  background: var(--input-bg);
+  color: var(--fg);
+  border: 1px solid var(--input-border);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+
+select:hover, select:focus {
+  border-color: var(--accent);
+}
+
+/* Number Inputs */
+input[type="number"] {
+  width: 100%;
+  background: var(--input-bg);
+  color: var(--fg);
+  border: 1px solid var(--input-border);
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+input[type="number"]:focus {
+  border-color: var(--accent);
+}
+
+.two-col {
+  display: flex;
+  gap: 8px;
+}
+
+/* Checkbox Labels */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Buttons */
+.btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: var(--btn-secondary);
+  color: var(--fg);
+}
+
+.btn:hover {
+  background: var(--btn-secondary-hover);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #07070a;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: 0 0 16px var(--accent-dim);
+  color: #000000;
+}
+
+.file-input-btn {
+  width: 100%;
+}
+
+/* Status Messages */
+.status-msg {
+  font-size: 11px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: var(--cyan);
+  min-height: 16px;
+  text-align: center;
+  padding: 4px 0;
+  transition: color var(--transition);
+}
+
+/* Footer Diagnostics */
+.panel-footer {
+  margin-top: auto;
+  padding: 12px 16px;
+  border-top: 1px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.panel-footer-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.panel-footer-row span:last-child {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ============================================================
+   Scrollbars
+   ============================================================ */
+
+#controls-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+#controls-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#controls-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+#controls-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================================
+   Mobile Responsiveness
+   ============================================================ */
+
+@media (max-width: 768px) {
+  #toggle-controls {
+    left: 12px;
+  }
+
+  #quick-upload-pill {
+    right: 12px;
+  }
+
+  #demo-portrait-pill {
+    display: none;
+  }
+
+  .panel {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 60vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    border-bottom: none;
+    transform: translateY(100%);
+  }
+
+  .panel.open {
+    transform: translateY(0);
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .panel.collapsed {
+    transform: translateY(100%);
+  }
+}

@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Particle Portrait</title>
+<style>
+:root{--bg:#000;--fg:#9a9a9a;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);overflow:hidden;font-family:ui-monospace,Menlo,Consolas,monospace}
+body{display:flex;align-items:center;justify-content:center}
+canvas{display:block;touch-action:none;cursor:crosshair}
+.hint{position:fixed;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom,0px));text-align:center;font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.7;pointer-events:none;transition:opacity 1s}
+.pill{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));font:inherit;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#bbb;border:1px solid rgba(255,255,255,.25);padding:8px 14px;border-radius:999px;cursor:pointer;background:rgba(0,0,0,.45);transition:.2s;z-index:5}
+.pill:hover{color:#fff;border-color:#fff}#tg{left:14px}.up{right:14px}
+#panel{position:fixed;top:calc(56px + env(safe-area-inset-top,0px));left:14px;width:224px;max-height:calc(100% - 110px);overflow:auto;padding:14px;background:rgba(10,10,12,.74);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);border-radius:14px;font-size:11px;color:#cfcfcf;display:none;z-index:5}
+#panel.open{display:block}
+.row{margin:0 0 11px}.row label{display:flex;justify-content:space-between;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;font-size:10px;color:#9a9a9a}.row label b{color:#7ee7ff;font-weight:600}
+input[type=range]{width:100%;accent-color:#7ee7ff;margin:0}
+select{width:100%;background:#111;color:#ddd;border:1px solid #333;padding:6px;border-radius:6px;font:inherit}
+.btns{display:flex;gap:8px;margin-top:6px}.btns button{flex:1;font:inherit;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#ddd;background:#16161a;border:1px solid #333;padding:7px;border-radius:8px;cursor:pointer}.btns button:hover{border-color:#7ee7ff;color:#fff}
+h4{margin:0 0 10px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#fff;font-weight:600}
+body.drag::after{content:"Drop image";position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.7);color:#fff;letter-spacing:.2em;text-transform:uppercase;font-size:14px}
+#stage{position:fixed;inset:0;overflow:auto;display:flex}
+#stage canvas{margin:auto}
+.row input[type=number]{width:100%;box-sizing:border-box;background:#111;color:#ddd;border:1px solid #333;padding:6px;border-radius:6px;font:inherit}
+.two{display:flex;gap:8px}.msg{margin-top:8px;font-size:10px;color:#7ee7ff;min-height:12px}
+#empty{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8a8a8a;pointer-events:none}
+.big{pointer-events:auto;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#ddd;border:1px solid rgba(255,255,255,.35);padding:11px 22px;border-radius:999px;cursor:pointer;transition:.2s}.big:hover{color:#fff;border-color:#fff}
+</style></head><body>
+<div id="stage"><canvas id="c"></canvas></div>
+<div id="empty"><div>Drop, paste or upload an image</div><label class="big">Choose image<input type="file" id="f2" accept="image/*" hidden></label></div>
+<button class="pill" id="tg">Controls</button>
+<label class="pill up">Upload image<input type="file" id="f" accept="image/*" hidden></label>
+<div id="panel"><h4>Controls</h4></div>
+<div class="hint" id="hint">Move your cursor over the particles &middot; drop or upload your own image</div>
+<script>
+const DEF={spacing:3,size:1.6,radius:40,soft:.5,lift:1,speed:1,jitter:1,fuzz:1,fuzzSize:1,tint:1,spread:1,bright:1.15,shimmer:1,cutoff:28,auto:1,mode:'original',cw:0,ch:0,fit:'contain'};
+const P={...DEF};
+// key,label,min,max,step,action: 0 live, 1 resample, 2 recolor, 3 fuzz count
+const CT=[['spacing','Spacing (density)',2.5,8,.5,1],['size','Particle size',.8,5,.1,0],['radius','Hover radius',15,160,1,0],['soft','Edge softness',0,1,.05,0],['lift','Lift height',.2,3,.1,0],['speed','Flow speed',.3,3,.1,0],['jitter','Particle jitter',0,3,.1,0],['shimmer','Shimmer',0,2,.1,0],['fuzz','Fuzz amount',0,2,.05,3],['fuzzSize','Fuzz size',1,4,.5,0],['tint','Tint variety',0,3,.1,2],['spread','Brightness spread',0,2,.1,2],['bright','Brightness',.5,2,.05,2],['cutoff','Dark cutoff',0,120,1,1]];
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let W,H,dpr,n,hx,hy,r0,g0,b0,cr,cg,cb,ox,oy,al,sd,qq,vv,dl,en,buf,imgd,ds=2,raf,fr=0,mx=-1e9,my=-1e9,sx=-1e9,sy=-1e9;
+let DN=0,DNmax=0,dX,dY,dVX,dVY,dP;
+const im=new Image();im.onload=()=>init(false);
+function hsl(h,s,l){const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return l-a*Math.max(-1,Math.min(k-3,9-k,1))};return[f(0)*255,f(8)*255,f(4)*255]}
+function bgEst(d){ // detect a uniform light/coloured backdrop so any photo works
+  let r=0,g=0,b=0,n=0;const L=[];
+  const add=(x,y)=>{const k=(y*W+x)*4;if(d[k+3]<200)return;r+=d[k];g+=d[k+1];b+=d[k+2];n++;L.push(.3*d[k]+.59*d[k+1]+.11*d[k+2])};
+  for(let x=0;x<W;x+=7){add(x,0);add(x,H-1)}for(let y=0;y<H;y+=7){add(0,y);add(W-1,y)}
+  if(n<10)return null;r/=n;g/=n;b/=n;
+  const m=L.reduce((a,c)=>a+c,0)/n,sdv=Math.sqrt(L.reduce((a,c)=>a+(c-m)*(c-m),0)/n);
+  return sdv<30&&m>=40?[r,g,b]:null;
+}
+function recolor(){
+  const ta=P.tint,a1=.14*ta,a2=a1+.1*ta,a3=a2+.06*ta,a4=a3+.05*ta,br=P.bright;
+  for(let i=0;i<n;i++){
+    let r=r0[i],g=g0[i],b=b0[i];const l=.3*r+.59*g+.11*b;
+    if(P.mode==='mono'){r=g=b=l}
+    else if(P.mode==='ember'){r=l*1.9;g=Math.max(0,l*1.5-60);b=Math.max(0,l*1.2-170)}
+    else if(P.mode==='aurora'){const c=hsl((hx[i]/W*260+(1-hy[i]/H)*80+190)%360,.85,.25+.5*l/255);r=c[0];g=c[1];b=c[2]}
+    let tr=1,tg=1,tb=1;const q=qq[i];
+    if(P.mode==='original'){
+      if(q<a1){tr=.7;tg=.9;tb=1.2}else if(q<a2){tr=1.2;tg=.92;tb=.68}else if(q<a3){tr=1.12;tg=.72;tb=1.15}else if(q<a4){tr=.72;tg=1.12;tb=.95}
+    }
+    const v=1+(vv[i]-.5)*.5*P.spread;
+    cr[i]=Math.min(255,r*br*v*tr);cg[i]=Math.min(255,g*br*v*tg);cb[i]=Math.min(255,b*br*v*tb);
+  }
+}
+function setDust(){DN=Math.min(DNmax,Math.round(DNmax/2*P.fuzz))}
+function init(skip){
+  if(!im.naturalWidth)return;
+  document.getElementById('empty').style.display='none';
+  skip=skip===true;
+  cancelAnimationFrame(raf);fr=skip?400:0;
+  dpr=Math.min(window.devicePixelRatio||1,2);
+  const custom=P.cw>0&&P.ch>0;let w,h;
+  if(custom){w=P.cw;h=P.ch}else{const ar=im.width/im.height;h=innerHeight;w=h*ar;if(w>innerWidth){w=innerWidth;h=w/ar}}
+  dpr=Math.min(dpr,4096/Math.max(w,h));
+  cwI.placeholder=Math.round(w);chI.placeholder=Math.round(h);
+  cv.style.width=w+'px';cv.style.height=h+'px';
+  W=cv.width=Math.round(w*dpr);H=cv.height=Math.round(h*dpr);
+  const o=document.createElement('canvas');o.width=W;o.height=H;
+  const oc=o.getContext('2d',{willReadFrequently:true});
+  if(custom&&P.fit!=='stretch'){const k=P.fit==='cover'?Math.max(W/im.width,H/im.height):Math.min(W/im.width,H/im.height),dw=im.width*k,dh=im.height*k;oc.drawImage(im,(W-dw)/2,(H-dh)/2,dw,dh)}
+  else oc.drawImage(im,0,0,W,H);
+  const d=oc.getImageData(0,0,W,H).data,step=Math.max(2,Math.round(P.spacing*dpr),Math.ceil(Math.sqrt(W*H/160000)));
+  const max=Math.ceil(W/step)*Math.ceil(H/step),F=()=>new Float32Array(max),U=()=>new Uint8Array(max);
+  hx=F();hy=F();ox=F();oy=F();al=F();sd=F();dl=F();qq=F();vv=F();en=U();r0=U();g0=U();b0=U();cr=U();cg=U();cb=U();n=0;
+  const bgc=P.auto?bgEst(d):null;
+  for(let y=0;y<H-4;y+=step)for(let x=0;x<W-4;x+=step){
+    const k=(y*W+x)*4,r=d[k],g=d[k+1],b=d[k+2],l=.3*r+.59*g+.11*b;
+    if(d[k+3]<40)continue;
+    if(bgc){const e0=r-bgc[0],e1=g-bgc[1],e2=b-bgc[2];if(e0*e0+e1*e1+e2*e2<1800)continue}else if(l<P.cutoff)continue;
+    hx[n]=x;hy[n]=y;r0[n]=r;g0[n]=g;b0[n]=b;sd[n]=Math.random();qq[n]=Math.random();vv[n]=Math.random();
+    if(skip){al[n]=1}else{ // entry: start scattered, assemble top-to-bottom with random stagger
+      ox[n]=(Math.random()-.5)*W*.9;oy[n]=(Math.random()-.5)*H*.8+H*.12;dl[n]=y/H*80+Math.random()*50;en[n]=1}
+    n++;
+  }
+  recolor();
+  DNmax=Math.min(2200,Math.round(W*H/(dpr*dpr)/450*2));setDust();
+  dX=new Float32Array(DNmax);dY=new Float32Array(DNmax);dVX=new Float32Array(DNmax);dVY=new Float32Array(DNmax);dP=new Float32Array(DNmax);
+  for(let j=0;j<DNmax;j++){dX[j]=Math.random()*(W-4);dY[j]=Math.random()*(H-4);dP[j]=Math.random()*6.28}
+  buf=new Uint32Array(W*H);imgd=new ImageData(new Uint8ClampedArray(buf.buffer),W,H);
+  loop();
+}
+function loop(t=0){
+  fr++;
+  if(mx<-1e8){sx=sy=-1e9}else if(sx<-1e8){sx=mx;sy=my}else{sx+=(mx-sx)*.12;sy+=(my-sy)*.12}
+  const K=dpr,sp=P.speed,R=P.radius*K,RO=R*(1+.6*P.soft),RO2=RO*RO,kk=1+(1-P.soft)*1.6,ca=Math.cos(.05),sa=Math.sin(.05);
+  ds=Math.max(1,Math.round(P.size*K));
+  const shA=.2*P.shimmer,shB=1-shA,lift=(90)*K*P.lift;
+  buf.fill(0xff000000);
+  for(let i=0;i<n;i++){
+    if(fr<dl[i])continue;
+    const s=sd[i],dx=hx[i]-sx,dy=hy[i]-sy;let X=ox[i],Y=oy[i],a=al[i];
+    let f=0;const dd=dx*dx+dy*dy;
+    if(dd<RO2){const u=Math.min(1,(1-Math.sqrt(dd)/RO)*kk);f=u*u*(3-2*u)} // soft feathered edge
+    if(f>.01){ // hover: fade and flow up, strength follows the soft falloff
+      const w=1-f,tg=1-f,dec=1-Math.min(.5,.02*sp*w);
+      Y+=(-(lift+s*160*K*P.lift)-Y)*Math.min(.5,.018*sp)*f;X+=((s-.5)*60*K-X)*Math.min(.5,.016*sp)*f;Y*=dec;X*=dec;
+      a+=(tg-a)*Math.min(.5,(tg<a?.03:.02)*sp);if(f>.05)en[i]=0;
+    }else if(en[i]){ // entry: spiral in and condense
+      const g=s>.5?1:-1,nx=X*ca-g*Y*sa,ny=g*X*sa+Y*ca;X=nx*.955;Y=ny*.955;a+=(1-a)*.05;
+      if(Math.abs(X)+Math.abs(Y)<1.5)en[i]=0;
+    }else{ // reverse: flow back and fade in
+      const dec=1-Math.min(.5,.02*sp);X*=dec;Y*=dec;a+=(1-a)*Math.min(.5,.02*sp);
+    }
+    ox[i]=X;oy[i]=Y;al[i]=a;
+    if(a<.03)continue;
+    const fz=(Math.min(3,(Math.abs(X)+Math.abs(Y))*.035)+.35)*K*P.jitter;
+    const x=(hx[i]+X+(Math.random()-.5)*fz)|0,y=(hy[i]+Y+(Math.random()-.5)*fz)|0;
+    if(x<0||y<0||x>W-ds||y>H-ds)continue;
+    const m=a*(shB+shA*Math.sin(t*.003+s*40)),c=0xff000000|((cb[i]*m|0)<<16)|((cg[i]*m|0)<<8)|(cr[i]*m|0);
+    for(let j=0;j<ds;j++){const row=(y+j)*W+x;for(let k=0;k<ds;k++)buf[row+k]=c}
+  }
+  // drifting fuzz dust
+  const dk=Math.min(1,fr/150),DR=R*1.8,z=Math.max(1,Math.round(P.fuzzSize*K*.7));
+  for(let j=0;j<DN;j++){
+    let ux=dVX[j]+(Math.random()-.5)*.09*K,uy=dVY[j]+(Math.random()-.5)*.09*K-.004*K;
+    if(sx>-1e8){const ddx=dX[j]-sx,ddy=dY[j]-sy,dd=ddx*ddx+ddy*ddy;
+      if(dd<DR*DR){const d=Math.sqrt(dd)+.01,f=1-d/DR;ux+=(ddx/d*.6-ddy/d*.5)*f*K;uy+=(ddy/d*.6+ddx/d*.5)*f*K}}
+    ux*=.96;uy*=.96;dVX[j]=ux;dVY[j]=uy;
+    let x=dX[j]+ux,y=dY[j]+uy;
+    if(x<0)x=W-z-1;else if(x>W-z)x=0;if(y<0)y=H-z-1;else if(y>H-z)y=0;
+    dX[j]=x;dY[j]=y;
+    const l=((28+(.5+.5*Math.sin(t*.004+dP[j]))*80)*dk)|0,hh=dP[j],rr=Math.min(255,l*(.85+.3*Math.cos(hh))|0),bb=Math.min(255,l*(.85+.3*Math.sin(hh))|0),c=0xff000000|(bb<<16)|(l<<8)|rr,px=x|0,py=y|0;
+    for(let q=0;q<z;q++){const row=(py+q)*W+px;for(let k=0;k<z;k++)buf[row+k]=c}
+  }
+  ctx.putImageData(imgd,0,0);raf=requestAnimationFrame(loop);
+}
+// ---- controls UI
+const pan=document.getElementById('panel'),inputs={};let rtm;
+function apply(a){if(a===1){clearTimeout(rtm);rtm=setTimeout(()=>init(true),140)}else if(a===2)recolor();else if(a===3)setDust()}
+function mkRow(html){const d=document.createElement('div');d.className='row';d.innerHTML=html;pan.appendChild(d);return d}
+const md=mkRow('<label><span>Palette</span></label><select><option value="original">Original + tints</option><option value="mono">Monochrome</option><option value="aurora">Aurora</option><option value="ember">Ember</option></select>');
+const sel=md.querySelector('select');sel.onchange=()=>{P.mode=sel.value;recolor()};
+const ab=mkRow('<label><span>Auto-remove backdrop</span><input type="checkbox" checked></label>');
+const cb2=ab.querySelector('input');cb2.onchange=()=>{P.auto=cb2.checked?1:0;apply(1)};
+CT.forEach(([k,lb,mn,mxv,st,act])=>{
+  const d=mkRow(`<label><span>${lb}</span><b>${P[k]}</b></label><input type="range" min="${mn}" max="${mxv}" step="${st}" value="${P[k]}">`);
+  const inp=d.querySelector('input'),out=d.querySelector('b');inputs[k]=[inp,out];
+  inp.oninput=()=>{P[k]=+inp.value;out.textContent=P[k];apply(act)};
+});
+const csR=mkRow('<label><span>Canvas size (px)</span></label><div class="two"><input type="number" id="cw" min="100" max="3000" placeholder="auto"><input type="number" id="ch" min="100" max="3000" placeholder="auto"></div><label style="margin-top:8px"><span>Keep image ratio</span><input type="checkbox" id="lk" checked></label>');
+const fitR=mkRow('<label><span>Image fit</span></label><select id="fit"><option value="contain">Contain</option><option value="cover">Cover (crop)</option><option value="stretch">Stretch</option></select><div class="btns"><button id="fa">Auto size</button></div>');
+const cwI=csR.querySelector('#cw'),chI=csR.querySelector('#ch'),lkI=csR.querySelector('#lk'),fitS=fitR.querySelector('#fit');
+function sizeChange(src){
+  let w=+cwI.value,h=+chI.value;const ar=im.width/im.height||1;
+  if(lkI.checked){if(src==='w'&&w)h=Math.round(w/ar);else if(src==='h'&&h)w=Math.round(h*ar);else if(w&&!h)h=Math.round(w/ar);else if(h&&!w)w=Math.round(h*ar)}
+  w=Math.min(3000,w);h=Math.min(3000,h);
+  if(w>=100&&h>=100){P.cw=w;P.ch=h;cwI.value=w;chI.value=h}else{P.cw=P.ch=0}
+  apply(1);
+}
+cwI.onchange=()=>sizeChange('w');chI.onchange=()=>sizeChange('h');
+fitS.onchange=()=>{P.fit=fitS.value;apply(1)};
+fitR.querySelector('#fa').onclick=()=>{P.cw=P.ch=0;cwI.value=chI.value='';init(true)};
+// ---- export
+const exR=mkRow('<label><span>Export</span></label><div class="btns"><button id="xp">PNG</button><button id="xv">WebM</button><button id="xj">Settings</button></div><label style="margin-top:9px"><span>Transparent PNG</span><input type="checkbox" id="xt"></label><label style="margin-top:6px"><span>Video seconds</span><input type="number" id="xs" value="6" min="2" max="30" style="width:56px"></label><label style="margin-top:6px"><span>Include build-in</span><input type="checkbox" id="xe" checked></label><div class="msg" id="xm"></div>');
+const xm=exR.querySelector('#xm'),msg=t=>{xm.textContent=t};
+let DL=null,rec=false;
+if(window.claude&&claude.use)claude.use('downloads').then(m=>{DL=m}).catch(()=>{});
+async function save(name,data){
+  try{
+    if(DL){await DL.save({filename:name,data});msg('Saved '+name)}
+    else{const a=document.createElement('a');a.href=URL.createObjectURL(data instanceof Blob?data:new Blob([data]));a.download=name;document.body.appendChild(a);a.click();a.remove();msg('Exported '+name)}
+  }catch(e){msg(e&&e.code==='declined'?'Export cancelled':'Export failed: '+((e&&e.message)||e))}
+}
+exR.querySelector('#xp').onclick=async()=>{
+  if(!buf){msg('Load an image first');return}
+  let src=cv;
+  if(exR.querySelector('#xt').checked){ // unpremultiply: brightness becomes alpha
+    const t=document.createElement('canvas');t.width=W;t.height=H;const tc=t.getContext('2d'),id=tc.createImageData(W,H),u=new Uint32Array(id.data.buffer);
+    for(let i=0;i<buf.length;i++){const c=buf[i],r=c&255,g=(c>>8)&255,b=(c>>16)&255,m=Math.max(r,g,b);if(!m){u[i]=0;continue}const k=255/m;u[i]=((m<<24)|(((b*k)|0)<<16)|(((g*k)|0)<<8)|((r*k)|0))>>>0}
+    tc.putImageData(id,0,0);src=t;
+  }
+  const blob=await new Promise(r=>src.toBlob(r,'image/png'));
+  save('particle-portrait.png',blob);
+};
+exR.querySelector('#xv').onclick=async()=>{
+  if(rec)return;if(!buf){msg('Load an image first');return}
+  const mime=window.MediaRecorder&&cv.captureStream?['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(m=>MediaRecorder.isTypeSupported(m)):null;
+  if(!mime){msg('Video recording is not supported in this browser');return}
+  const secs=Math.max(2,Math.min(30,+exR.querySelector('#xs').value||6));
+  if(exR.querySelector('#xe').checked)init(false);
+  const mr=new MediaRecorder(cv.captureStream(30),{mimeType:mime,videoBitsPerSecond:8e6}),chunks=[];
+  mr.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  const done=new Promise(r=>{mr.onstop=r});rec=true;mr.start(250);
+  let left=secs;msg('Recording… '+left+'s (move your cursor!)');
+  const tm=setInterval(()=>msg('Recording… '+(--left)+'s (move your cursor!)'),1000);
+  setTimeout(()=>mr.stop(),secs*1000);await done;clearInterval(tm);rec=false;
+  save('particle-portrait.webm',new Blob(chunks,{type:'video/webm'}));
+};
+exR.querySelector('#xj').onclick=()=>save('particle-settings.json',JSON.stringify(P,null,2));
+const bt=mkRow('<div class="btns"><button id="rp">Replay</button><button id="rs">Reset</button></div>');
+document.getElementById('rp').onclick=()=>init(false);
+document.getElementById('rs').onclick=()=>{Object.assign(P,DEF);for(const k in inputs){inputs[k][0].value=P[k];inputs[k][1].textContent=P[k]}sel.value=P.mode;cb2.checked=true;cwI.value=chI.value='';fitS.value='contain';init(true)};
+const tg=document.getElementById('tg');tg.onclick=()=>pan.classList.toggle('open');
+if(innerWidth>760)pan.classList.add('open');
+// ---- pointer + upload
+const ui=e=>e.target.closest&&e.target.closest('#panel,.pill');
+function mv(e){if(ui(e)){mx=my=-1e9;return}const r=cv.getBoundingClientRect();mx=(e.clientX-r.left)*dpr;my=(e.clientY-r.top)*dpr;document.getElementById('hint').style.opacity=0}
+addEventListener('pointermove',mv);addEventListener('pointerdown',mv);
+document.addEventListener('mouseleave',()=>{mx=my=-1e9});
+addEventListener('pointerup',e=>{if(e.pointerType==='touch')mx=my=-1e9});
+function loadFile(f){if(!f||!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=()=>{im.src=r.result};r.readAsDataURL(f)}
+document.getElementById('f').addEventListener('change',e=>loadFile(e.target.files[0]));
+document.getElementById('f2').addEventListener('change',e=>loadFile(e.target.files[0]));
+addEventListener('dragover',e=>{e.preventDefault();document.body.classList.add('drag')});
+addEventListener('dragleave',e=>{if(!e.relatedTarget)document.body.classList.remove('drag')});
+addEventListener('drop',e=>{e.preventDefault();document.body.classList.remove('drag');loadFile(e.dataTransfer.files[0])});
+addEventListener('paste',e=>{for(const it of e.clipboardData.items)if(it.type.startsWith('image/')){loadFile(it.getAsFile());break}});
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>init(true),200)});
+</script></body></html>
