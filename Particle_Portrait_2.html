@@ -39,7 +39,7 @@ const CT=[['spacing','Spacing (density)',2.5,8,.5,1],['size','Particle size',.8,
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');
 let W,H,dpr,n,hx,hy,r0,g0,b0,cr,cg,cb,ox,oy,al,sd,qq,vv,dl,en,buf,imgd,ds=2,raf,fr=0,mx=-1e9,my=-1e9,sx=-1e9,sy=-1e9;
 let DN=0,DNmax=0,dX,dY,dVX,dVY,dP;
-const im=new Image();im.onload=()=>init(false);
+const im=new Image();im.onload=()=>init(false);im.src='default.jpg';
 function hsl(h,s,l){const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return l-a*Math.max(-1,Math.min(k-3,9-k,1))};return[f(0)*255,f(8)*255,f(4)*255]}
 function bgEst(d){ // detect a uniform light/coloured backdrop so any photo works
   let r=0,g=0,b=0,n=0;const L=[];

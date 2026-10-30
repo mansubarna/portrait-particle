@@ -81,12 +81,17 @@
   let frameCount = 0;
   let currentFps = 60;
 
-  // Source Image
+  // Source Image & Default Path
+  const DEFAULT_IMAGE_PATH = 'default.jpg';
   const im = new Image();
   im.crossOrigin = 'anonymous';
   im.onload = () => {
     if (emptyState) emptyState.style.display = 'none';
     init(false);
+  };
+  im.onerror = () => {
+    console.warn('Default image could not be loaded, falling back to procedural portrait.');
+    im.src = createDemoPortrait();
   };
 
   // --- Utility Functions ---
@@ -953,8 +958,8 @@
     const demoButtons = document.querySelectorAll('.load-demo-btn');
     demoButtons.forEach(btn => {
       btn.addEventListener('click', () => {
-        im.src = createDemoPortrait();
-        showMsg('Loaded built-in demo portrait');
+        im.src = DEFAULT_IMAGE_PATH;
+        showMsg('Loaded default portrait image');
       });
     });
 
@@ -1059,8 +1064,8 @@
     setupControls();
     setupInputEvents();
 
-    // Load initial built-in high-quality demo portrait so the screen is never blank
-    im.src = createDemoPortrait();
+    // Load initial default image with graceful procedural fallback
+    im.src = DEFAULT_IMAGE_PATH;
   }
 
   if (document.readyState === 'loading') {
