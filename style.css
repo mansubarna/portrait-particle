@@ -603,6 +603,68 @@ html, body {
   min-width: 100px;
 }
 
+/* Audio Reactive View */
+#tool-audio-view {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+#tool-audio-view::-webkit-scrollbar {
+  display: none;
+}
+
+.audio-controls-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 18px;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+  justify-content: flex-start;
+}
+
+.audio-controls-inline::-webkit-scrollbar {
+  display: none;
+}
+
+.audio-sens-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.audio-sens-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#audio-sens-slider {
+  width: 75px;
+  height: 4px;
+}
+
+#audio-sens-val {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 700;
+  min-width: 22px;
+}
+
 /* Export View */
 .export-inline-bar {
   display: flex;

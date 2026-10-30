@@ -189,6 +189,12 @@
       icon: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>'
     },
     {
+      id: 'audio',
+      name: 'Audio React',
+      type: 'audio',
+      icon: '<svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>'
+    },
+    {
       id: 'export',
       name: 'Export',
       type: 'export',
@@ -197,6 +203,227 @@
   ];
 
   let activeToolId = 'size';
+
+  // --- Audio Reactivity Engine State ---
+  let audioCtx = null;
+  let analyser = null;
+  let freqData = null;
+  let waveData = null;
+  let audioStream = null;
+  let audioSourceNode = null;
+  let audioAudioEl = null;
+  let demoSynthTimer = null;
+  let demoBeatStep = 0;
+  let audioActive = false;
+  let audioMode = 'off'; // 'mic', 'track', 'demo', 'off'
+  let audioSensitivity = 1.4;
+  let beatPeak = 0;
+  let bassLevel = 0, midLevel = 0, highLevel = 0;
+
+  function initAudioContext() {
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContextClass();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.8;
+      freqData = new Uint8Array(analyser.frequencyBinCount);
+      waveData = new Uint8Array(analyser.fftSize);
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  function stopAudio() {
+    if (demoSynthTimer) {
+      clearInterval(demoSynthTimer);
+      demoSynthTimer = null;
+    }
+    if (audioStream) {
+      audioStream.getTracks().forEach(t => t.stop());
+      audioStream = null;
+    }
+    if (audioSourceNode) {
+      try { audioSourceNode.disconnect(); } catch (e) {}
+      audioSourceNode = null;
+    }
+    if (audioAudioEl) {
+      audioAudioEl.pause();
+      audioAudioEl.src = '';
+      audioAudioEl = null;
+    }
+    audioActive = false;
+    audioMode = 'off';
+    beatPeak = 0;
+    bassLevel = midLevel = highLevel = 0;
+    updateAudioUI();
+    showMsg('Audio distortion off');
+  }
+
+  function startMicAudio() {
+    initAudioContext();
+    if (demoSynthTimer) clearInterval(demoSynthTimer);
+    if (audioAudioEl) { audioAudioEl.pause(); audioAudioEl = null; }
+
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      .then(stream => {
+        audioStream = stream;
+        if (audioSourceNode) {
+          try { audioSourceNode.disconnect(); } catch (e) {}
+        }
+        audioSourceNode = audioCtx.createMediaStreamSource(stream);
+        audioSourceNode.connect(analyser); // No destination connect to prevent feedback
+        audioActive = true;
+        audioMode = 'mic';
+        updateAudioUI();
+        showMsg('Microphone live: Speak or play music to distort particles');
+      })
+      .catch(err => {
+        console.warn('Microphone access denied:', err);
+        showMsg('Microphone permission required for voice reactivity', true);
+        stopAudio();
+      });
+  }
+
+  function playAudioFile(file) {
+    if (!file || !file.type.startsWith('audio/')) {
+      showMsg('Please select a valid audio file (MP3/WAV)', true);
+      return;
+    }
+    initAudioContext();
+    if (demoSynthTimer) clearInterval(demoSynthTimer);
+    if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+
+    const url = URL.createObjectURL(file);
+    if (audioAudioEl) { audioAudioEl.pause(); }
+    audioAudioEl = new Audio();
+    audioAudioEl.src = url;
+    audioAudioEl.loop = true;
+
+    audioAudioEl.oncanplay = () => {
+      if (audioSourceNode) {
+        try { audioSourceNode.disconnect(); } catch (e) {}
+      }
+      audioSourceNode = audioCtx.createMediaElementSource(audioAudioEl);
+      audioSourceNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      audioAudioEl.play();
+      audioActive = true;
+      audioMode = 'track';
+      updateAudioUI();
+      showMsg(`Distorting particles with: ${file.name}`);
+    };
+  }
+
+  function startDemoSynth() {
+    initAudioContext();
+    if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+    if (audioAudioEl) { audioAudioEl.pause(); audioAudioEl = null; }
+    if (demoSynthTimer) clearInterval(demoSynthTimer);
+
+    audioActive = true;
+    audioMode = 'demo';
+    updateAudioUI();
+    showMsg('Playing built-in demo beat');
+
+    const bpm = 120;
+    const stepTime = (60 / bpm) / 4;
+    const masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.7;
+    masterGain.connect(analyser);
+    analyser.connect(audioCtx.destination);
+
+    function playKick(time) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.frequency.setValueAtTime(130, time);
+      osc.frequency.exponentialRampToValueAtTime(34, time + 0.12);
+      gain.gain.setValueAtTime(1.0, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.22);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + 0.23);
+    }
+
+    function playHiHat(time, open = false) {
+      const bufferSize = Math.floor(audioCtx.sampleRate * (open ? 0.12 : 0.04));
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 7500;
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(open ? 0.35 : 0.25, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + (open ? 0.11 : 0.035));
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      noise.start(time);
+    }
+
+    function playBass(time, freq) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, time);
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(650, time);
+      filter.frequency.exponentialRampToValueAtTime(110, time + 0.16);
+
+      gain.gain.setValueAtTime(0.4, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + 0.2);
+    }
+
+    const bassNotes = [55, 55, 65.4, 73.4, 55, 82.4, 73.4, 65.4];
+    let nextStepTime = audioCtx.currentTime + 0.05;
+
+    demoSynthTimer = setInterval(() => {
+      if (!audioActive || audioMode !== 'demo') {
+        clearInterval(demoSynthTimer);
+        demoSynthTimer = null;
+        return;
+      }
+      while (nextStepTime < audioCtx.currentTime + 0.2) {
+        const step = demoBeatStep % 16;
+        if (step % 4 === 0) playKick(nextStepTime);
+        if (step % 2 === 1) playHiHat(nextStepTime, step === 6 || step === 14);
+        if (step % 2 === 0 && (step === 2 || step === 6 || step === 10 || step === 14)) {
+          playBass(nextStepTime, bassNotes[(step / 2) % bassNotes.length]);
+        }
+        nextStepTime += stepTime;
+        demoBeatStep++;
+      }
+    }, 35);
+  }
+
+  function updateAudioUI() {
+    const micBtn = document.getElementById('audio-mic-btn');
+    const demoBtn = document.getElementById('audio-demo-btn');
+    const stopBtn = document.getElementById('audio-stop-btn');
+    const valEl = document.getElementById('active-tool-value');
+
+    if (micBtn) micBtn.classList.toggle('active', audioActive && audioMode === 'mic');
+    if (demoBtn) demoBtn.classList.toggle('active', audioActive && audioMode === 'demo');
+    if (stopBtn) stopBtn.classList.toggle('active', !audioActive);
+    if (valEl && activeToolId === 'audio') {
+      valEl.textContent = audioActive ? audioMode.toUpperCase() : 'OFF';
+    }
+  }
 
   // DOM Elements
   const cv = document.getElementById('canvas') || document.getElementById('c');
@@ -546,6 +773,40 @@
     // Fast clear to 32-bit black ABGR
     buf.fill(0xff000000);
 
+    // Sample Audio Spectrum & Waveform for Live Particle Distortion
+    let bPulse = 0, waveScale = 0;
+    if (audioActive && analyser && freqData && waveData) {
+      analyser.getByteFrequencyData(freqData);
+      analyser.getByteTimeDomainData(waveData);
+
+      let bSum = 0;
+      for (let k = 0; k < 14; k++) bSum += freqData[k];
+      const rawBass = bSum / (14 * 255);
+
+      let mSum = 0;
+      for (let k = 15; k < 80; k++) mSum += freqData[k];
+      const rawMids = mSum / (65 * 255);
+
+      let hSum = 0;
+      for (let k = 81; k < 200; k++) hSum += freqData[k];
+      const rawHighs = hSum / (119 * 255);
+
+      bassLevel += (rawBass - bassLevel) * 0.45;
+      midLevel += (rawMids - midLevel) * 0.35;
+      highLevel += (rawHighs - highLevel) * 0.45;
+
+      if (bassLevel > beatPeak) beatPeak = bassLevel;
+      else beatPeak *= 0.91;
+
+      bPulse = beatPeak * audioSensitivity * 26 * K;
+      waveScale = midLevel * audioSensitivity * 20 * K;
+    } else {
+      beatPeak *= 0.88;
+      bassLevel *= 0.88;
+      midLevel *= 0.88;
+      highLevel *= 0.88;
+    }
+
     // Particle dynamics
     for (let i = 0; i < n; i++) {
       if (fr < dl[i]) continue;
@@ -595,13 +856,39 @@
 
       if (a < 0.03) continue;
 
+      // Audio frequency and waveform signal distortion on particles
+      let audX = 0, audY = 0;
+      if (bPulse > 0.05 || waveScale > 0.05) {
+        const cdx = hx[i] - (W * 0.5);
+        const cdy = hy[i] - (H * 0.5);
+        const cdist = Math.sqrt(cdx * cdx + cdy * cdy) + 0.001;
+        const nx = cdx / cdist;
+        const ny = cdy / cdist;
+
+        // Radial Bass Beat Pulse
+        const ripple = Math.sin(cdist * 0.035 - fr * 0.12) * bPulse;
+
+        // Frequency Spectrum Waveform Warp
+        const bin = Math.min(255, Math.max(0, ((hx[i] / W) * 200) | 0));
+        const fAmp = (freqData[bin] / 255) * audioSensitivity;
+        const waveWarpY = Math.sin(hx[i] * 0.022 + fr * 0.08) * (fAmp * 14 * K);
+        const waveWarpX = Math.cos(hy[i] * 0.026 + fr * 0.07) * (fAmp * 9 * K);
+
+        // Acoustic Time-Domain Vibration
+        const wVal = (waveData[(i * 3) & 255] - 128) / 128;
+        const waveVibe = wVal * waveScale;
+
+        audX = nx * ripple + waveWarpX + waveVibe * (sd[i] - 0.5);
+        audY = ny * ripple + waveWarpY + waveVibe * (qq[i] - 0.5);
+      }
+
       const fz = (Math.min(3, (Math.abs(X) + Math.abs(Y)) * 0.035) + 0.35) * K * P.jitter;
-      const x = (hx[i] + X + (Math.random() - 0.5) * fz) | 0;
-      const y = (hy[i] + Y + (Math.random() - 0.5) * fz) | 0;
+      const x = (hx[i] + X + audX + (Math.random() - 0.5) * fz) | 0;
+      const y = (hy[i] + Y + audY + (Math.random() - 0.5) * fz) | 0;
 
       if (x < 0 || y < 0 || x > W - ds || y > H - ds) continue;
 
-      const m = a * (shB + shA * Math.sin(t * 0.003 + s * 40));
+      const m = a * (shB + (shA + highLevel * 0.45 * audioSensitivity) * Math.sin(t * 0.003 + s * 40));
       // Little-endian ABGR 32-bit packing
       const c = 0xff000000 | ((cb[i] * m | 0) << 16) | ((cg[i] * m | 0) << 8) | (cr[i] * m | 0);
 
@@ -621,6 +908,11 @@
     for (let j = 0; j < DN; j++) {
       let ux = dVX[j] + (Math.random() - 0.5) * 0.09 * K;
       let uy = dVY[j] + (Math.random() - 0.5) * 0.09 * K - 0.004 * K;
+
+      if (bPulse > 0.1) {
+        ux += (Math.random() - 0.5) * bPulse * 0.08;
+        uy += (Math.random() - 0.5) * bPulse * 0.08;
+      }
 
       if (sx > -1e8) {
         const ddx = dX[j] - sx, ddy = dY[j] - sy;
@@ -975,6 +1267,7 @@
     const sliderView = document.getElementById('tool-slider-view');
     const paletteView = document.getElementById('tool-palette-view');
     const canvasView = document.getElementById('tool-canvas-view');
+    const audioView = document.getElementById('tool-audio-view');
     const exportView = document.getElementById('tool-export-view');
     const activeSlider = document.getElementById('active-slider');
     const sliderMinEl = document.getElementById('active-slider-min');
@@ -1005,6 +1298,7 @@
       if (sliderView) sliderView.classList.remove('active');
       if (paletteView) paletteView.classList.remove('active');
       if (canvasView) canvasView.classList.remove('active');
+      if (audioView) audioView.classList.remove('active');
       if (exportView) exportView.classList.remove('active');
 
       if (tool.type === 'palette') {
@@ -1016,6 +1310,11 @@
         if (labelEl) labelEl.textContent = 'Canvas & Fit';
         if (valEl) valEl.textContent = (P.cw && P.ch) ? `${P.cw} × ${P.ch}` : 'Auto';
         if (canvasView) canvasView.classList.add('active');
+      } else if (tool.type === 'audio') {
+        if (labelEl) labelEl.textContent = 'Audio Distortion';
+        if (valEl) valEl.textContent = audioActive ? audioMode.toUpperCase() : 'OFF';
+        if (audioView) audioView.classList.add('active');
+        updateAudioUI();
       } else if (tool.type === 'export') {
         if (labelEl) labelEl.textContent = 'Export Portrait';
         if (valEl) valEl.textContent = 'PNG / Video / JSON';
@@ -1140,6 +1439,55 @@
       exportJsonBtn.addEventListener('click', exportSettings);
     }
 
+    // Audio Reactive Distortion Controls
+    const micBtn = document.getElementById('audio-mic-btn');
+    const demoBtn = document.getElementById('audio-demo-btn');
+    const stopBtn = document.getElementById('audio-stop-btn');
+    const audioFileInput = document.getElementById('audio-file-input');
+    const audioSensSlider = document.getElementById('audio-sens-slider');
+    const audioSensVal = document.getElementById('audio-sens-val');
+
+    if (micBtn) {
+      micBtn.addEventListener('click', () => {
+        if (audioActive && audioMode === 'mic') {
+          stopAudio();
+        } else {
+          startMicAudio();
+        }
+      });
+    }
+
+    if (demoBtn) {
+      demoBtn.addEventListener('click', () => {
+        if (audioActive && audioMode === 'demo') {
+          stopAudio();
+        } else {
+          startDemoSynth();
+        }
+      });
+    }
+
+    if (stopBtn) {
+      stopBtn.addEventListener('click', stopAudio);
+    }
+
+    if (audioFileInput) {
+      audioFileInput.addEventListener('change', e => {
+        if (e.target.files && e.target.files[0]) {
+          playAudioFile(e.target.files[0]);
+        }
+      });
+    }
+
+    if (audioSensSlider) {
+      audioSensSlider.value = audioSensitivity;
+      if (audioSensVal) audioSensVal.textContent = audioSensitivity.toFixed(1);
+      audioSensSlider.addEventListener('input', () => {
+        audioSensitivity = parseFloat(audioSensSlider.value);
+        if (audioSensVal) audioSensVal.textContent = audioSensitivity.toFixed(1);
+      });
+    }
+
     // Reset All Settings Button (Working with Visual Explosion & Reassembly)
     const resetBtn = document.getElementById('reset-btn');
     if (resetBtn) {
@@ -1153,6 +1501,10 @@
         if (cwInput) cwInput.value = '';
         if (chInput) chInput.value = '';
         if (fitSelect) fitSelect.value = 'contain';
+
+        audioSensitivity = 1.4;
+        if (audioSensSlider) audioSensSlider.value = 1.4;
+        if (audioSensVal) audioSensVal.textContent = '1.4';
 
         syncPaletteChips();
         setActiveTool(activeToolId);
@@ -1213,8 +1565,8 @@
       closePanelBtn.addEventListener('click', closeConsole);
     }
 
-    // File Input Handlers
-    document.querySelectorAll('input[type="file"]').forEach(inp => {
+    // Image File Input Handlers (excluding audio inputs)
+    document.querySelectorAll('input[type="file"][accept*="image"]').forEach(inp => {
       inp.addEventListener('change', e => {
         if (e.target.files && e.target.files[0]) {
           loadFile(e.target.files[0]);

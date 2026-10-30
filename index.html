@@ -131,6 +131,24 @@
         </div>
       </div>
 
+      <!-- Audio Reactive View (Distort Particles with Audio Signal) -->
+      <div id="tool-audio-view" class="tool-view">
+        <div class="audio-controls-inline">
+          <button type="button" class="chip-btn" id="audio-mic-btn" title="Toggle Live Microphone Reactivity">🎤 Mic</button>
+          <label class="chip-btn file-chip" title="Upload Audio File (MP3/WAV/AAC)">
+            📁 Track
+            <input type="file" id="audio-file-input" accept="audio/*" hidden>
+          </label>
+          <button type="button" class="chip-btn" id="audio-demo-btn" title="Play Built-in Demo Synth Beat">🎵 Beat</button>
+          <button type="button" class="chip-btn active" id="audio-stop-btn" title="Turn Off Audio Reactivity">⏹ Off</button>
+          <div class="audio-sens-wrap" title="Audio Signal Distortion Intensity">
+            <span class="audio-sens-label">Sens</span>
+            <input type="range" id="audio-sens-slider" min="0.5" max="3.0" step="0.1" value="1.4" aria-label="Audio Distortion Intensity">
+            <span id="audio-sens-val">1.4</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Export & Record View (Active when Export tool is selected) -->
       <div id="tool-export-view" class="tool-view">
         <div class="export-inline-bar">
