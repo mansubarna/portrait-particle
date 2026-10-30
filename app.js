@@ -2,7 +2,7 @@
  * Particle Portrait - Interactive Image Particle Simulation Engine
  * Replicated and enhanced with high-performance 32-bit pixel buffer rendering,
  * entrance physics, cursor flow turbulence, ambient dust, color palettes,
- * backdrop removal, video/image export, and responsive controls.
+ * high-contrast monochrome, subject focus background isolation, and export tools.
  */
 
 (() => {
@@ -22,10 +22,13 @@
     fuzzSize: 1.0,      // Ambient dust particle size (1 to 4)
     tint: 1.0,          // Color tint variation (0 to 3)
     spread: 1.0,        // Luminance spread contrast (0 to 2)
+    contrast: 1.0,      // Contrast multiplier S-curve (0.5 to 3.0)
     bright: 1.15,       // Master brightness multiplier (0.5 to 2)
     cutoff: 28,         // Dark background cutoff threshold (0 to 120)
+    brightCutoff: 255,  // Light background cutoff threshold (120 to 255)
+    subjectFocus: 0.0,  // Subject focus & vignette background isolation (0 to 2.0)
     auto: 1,            // Auto-detect & strip uniform backdrop (0 or 1)
-    mode: 'original',   // 'original', 'mono', 'aurora', 'ember'
+    mode: 'original',   // 'original', 'high-contrast-mono', 'mono', 'aurora', 'ember'
     cw: 0,              // Custom canvas width in CSS px (0 = responsive auto)
     ch: 0,              // Custom canvas height in CSS px (0 = responsive auto)
     fit: 'contain'      // 'contain', 'cover', 'stretch'
@@ -36,20 +39,23 @@
   // Slider specs: [key, label, min, max, step, actionType]
   // actionType: 0 = live variable update, 1 = debounced resample init(true), 2 = recolor(), 3 = setDust()
   const SLIDERS = [
-    { key: 'spacing', label: 'Spacing (Density)', min: 2.5, max: 8, step: 0.5, action: 1, group: 'dynamics' },
-    { key: 'size', label: 'Particle Size', min: 0.8, max: 5, step: 0.1, action: 0, group: 'dynamics' },
-    { key: 'radius', label: 'Hover Radius', min: 15, max: 160, step: 1, action: 0, group: 'dynamics' },
-    { key: 'soft', label: 'Edge Softness', min: 0, max: 1, step: 0.05, action: 0, group: 'dynamics' },
-    { key: 'lift', label: 'Lift Height', min: 0.2, max: 3, step: 0.1, action: 0, group: 'dynamics' },
-    { key: 'speed', label: 'Flow Speed', min: 0.3, max: 3, step: 0.1, action: 0, group: 'dynamics' },
-    { key: 'jitter', label: 'Particle Jitter', min: 0, max: 3, step: 0.1, action: 0, group: 'dynamics' },
-    { key: 'shimmer', label: 'Shimmer Effect', min: 0, max: 2, step: 0.1, action: 0, group: 'dynamics' },
-    { key: 'fuzz', label: 'Ambient Dust Amount', min: 0, max: 2, step: 0.05, action: 3, group: 'atmosphere' },
-    { key: 'fuzzSize', label: 'Dust Size', min: 1, max: 4, step: 0.5, action: 0, group: 'atmosphere' },
-    { key: 'tint', label: 'Tint Variety', min: 0, max: 3, step: 0.1, action: 2, group: 'atmosphere' },
-    { key: 'spread', label: 'Contrast Spread', min: 0, max: 2, step: 0.1, action: 2, group: 'atmosphere' },
-    { key: 'bright', label: 'Brightness', min: 0.5, max: 2, step: 0.05, action: 2, group: 'atmosphere' },
-    { key: 'cutoff', label: 'Dark Threshold', min: 0, max: 120, step: 1, action: 1, group: 'atmosphere' }
+    { key: 'contrast', label: 'Contrast', min: 0.5, max: 3.0, step: 0.1, action: 2 },
+    { key: 'subjectFocus', label: 'Subject Focus', min: 0, max: 2.0, step: 0.1, action: 1 },
+    { key: 'cutoff', label: 'Dark Cutoff', min: 0, max: 120, step: 1, action: 1 },
+    { key: 'brightCutoff', label: 'Light Cutoff', min: 120, max: 255, step: 1, action: 1 },
+    { key: 'spacing', label: 'Spacing (Density)', min: 2.5, max: 8, step: 0.5, action: 1 },
+    { key: 'size', label: 'Particle Size', min: 0.8, max: 5, step: 0.1, action: 0 },
+    { key: 'radius', label: 'Hover Radius', min: 15, max: 160, step: 1, action: 0 },
+    { key: 'soft', label: 'Edge Softness', min: 0, max: 1, step: 0.05, action: 0 },
+    { key: 'lift', label: 'Lift Height', min: 0.2, max: 3, step: 0.1, action: 0 },
+    { key: 'speed', label: 'Flow Speed', min: 0.3, max: 3, step: 0.1, action: 0 },
+    { key: 'jitter', label: 'Particle Jitter', min: 0, max: 3, step: 0.1, action: 0 },
+    { key: 'shimmer', label: 'Shimmer Effect', min: 0, max: 2, step: 0.1, action: 0 },
+    { key: 'bright', label: 'Brightness', min: 0.5, max: 2, step: 0.05, action: 2 },
+    { key: 'fuzz', label: 'Ambient Dust Amount', min: 0, max: 2, step: 0.05, action: 3 },
+    { key: 'fuzzSize', label: 'Dust Size', min: 1, max: 4, step: 0.5, action: 0 },
+    { key: 'tint', label: 'Tint Variety', min: 0, max: 3, step: 0.1, action: 2 },
+    { key: 'spread', label: 'Contrast Spread', min: 0, max: 2, step: 0.1, action: 2 }
   ];
 
   // DOM Elements
@@ -63,7 +69,6 @@
   const resInfoEl = document.getElementById('res-info');
   const msgEl = document.getElementById('export-msg') || document.getElementById('xm');
   const renderActionsBar = document.getElementById('render-actions-bar');
-  const motivateBanner = document.getElementById('motivate-banner');
 
   // Simulation state variables
   let W = 0, H = 0, dpr = 1;
@@ -133,7 +138,7 @@
       g += d[k + 1];
       b += d[k + 2];
       count++;
-      L.push(0.3 * d[k] + 0.59 * d[k + 1] + 0.11 * d[k + 2]);
+      L.push(0.299 * d[k] + 0.587 * d[k + 1] + 0.114 * d[k + 2]);
     };
 
     for (let x = 0; x < W; x += 7) {
@@ -154,7 +159,7 @@
     return stdDev < 30 && mean >= 40 ? [r, g, b] : null;
   }
 
-  // --- Recolor Function ---
+  // --- Recolor Function (With High Contrast & Monochrome Support) ---
   function recolor() {
     if (!n) return;
     const ta = P.tint;
@@ -163,12 +168,20 @@
     const a3 = a2 + 0.06 * ta;
     const a4 = a3 + 0.05 * ta;
     const br = P.bright;
+    const contrast = P.contrast || 1.0;
 
     for (let i = 0; i < n; i++) {
       let r = r0[i], g = g0[i], b = b0[i];
-      const l = 0.3 * r + 0.59 * g + 0.11 * b;
+      let l = 0.299 * r + 0.587 * g + 0.114 * b;
 
-      if (P.mode === 'mono') {
+      // High contrast S-curve transformation
+      if (P.mode === 'mono' || P.mode === 'high-contrast-mono') {
+        const factor = P.mode === 'high-contrast-mono' ? Math.max(contrast, 1.8) : contrast;
+        if (factor !== 1.0) {
+          const norm = l / 255;
+          const centered = (norm - 0.5) * factor + 0.5;
+          l = Math.min(255, Math.max(0, centered * 255));
+        }
         r = g = b = l;
       } else if (P.mode === 'ember') {
         r = l * 1.9;
@@ -179,6 +192,11 @@
         r = c[0];
         g = c[1];
         b = c[2];
+      } else if (contrast !== 1.0) {
+        // High contrast in color mode
+        r = Math.min(255, Math.max(0, ((r / 255 - 0.5) * contrast + 0.5) * 255));
+        g = Math.min(255, Math.max(0, ((g / 255 - 0.5) * contrast + 0.5) * 255));
+        b = Math.min(255, Math.max(0, ((b / 255 - 0.5) * contrast + 0.5) * 255));
       }
 
       let tr = 1, tg = 1, tb = 1;
@@ -206,7 +224,7 @@
     DN = Math.min(DNmax, Math.round(DNmax / 2 * P.fuzz));
   }
 
-  // --- Initialization & Resampling ---
+  // --- Initialization & Resampling (With Subject Focus & Background Isolation) ---
   function init(skipEntrance = false) {
     if (!im.naturalWidth) return;
 
@@ -278,6 +296,8 @@
     n = 0;
 
     const bgc = P.auto ? bgEst(d) : null;
+    const cx = W * 0.5, cy = H * 0.45;
+    const halfW = W * 0.5, halfH = H * 0.5;
 
     for (let y = 0; y < H - 4; y += step) {
       for (let x = 0; x < W - 4; x += step) {
@@ -285,15 +305,34 @@
         const r = d[k];
         const g = d[k + 1];
         const b = d[k + 2];
-        const l = 0.3 * r + 0.59 * g + 0.11 * b;
+        const l = 0.299 * r + 0.587 * g + 0.114 * b;
 
         if (d[k + 3] < 40) continue;
 
+        // Auto edge background removal
         if (bgc) {
           const e0 = r - bgc[0], e1 = g - bgc[1], e2 = b - bgc[2];
           if (e0 * e0 + e1 * e1 + e2 * e2 < 1800) continue;
-        } else if (l < P.cutoff) {
-          continue;
+        }
+
+        // Dark background threshold
+        if (l < P.cutoff) continue;
+
+        // Bright background threshold
+        if (P.brightCutoff < 255 && l > P.brightCutoff) continue;
+
+        // Subject focus: isolate central figure & remove background clutter
+        if (P.subjectFocus > 0) {
+          const nx = (x - cx) / halfW;
+          const ny = (y - cy) / halfH;
+          const dist = Math.sqrt(nx * nx + ny * ny);
+          const focusRadius = Math.max(0.35, 1.25 - P.subjectFocus * 0.45);
+          if (dist > focusRadius) {
+            const falloff = (dist - focusRadius) / 0.5;
+            const focusCutoff = P.cutoff + falloff * 85 * P.subjectFocus;
+            if (l < focusCutoff) continue;
+            if (dist > focusRadius + 0.65 && P.subjectFocus >= 1.0) continue;
+          }
         }
 
         hx[n] = x;
@@ -529,7 +568,6 @@
     reader.onload = () => {
       im.src = reader.result;
       showMsg(`Loaded ${file.name}`);
-      if (motivateBanner) motivateBanner.classList.add('dismissed');
     };
     reader.readAsDataURL(file);
   }
@@ -903,6 +941,94 @@
       });
     }
 
+    // Sync all controls UI with P values
+    function syncControlsUI() {
+      SLIDERS.forEach(({ key }) => {
+        const input = document.getElementById(key);
+        const output = document.getElementById(`${key}-val`) || document.getElementById(`${key}-value`);
+        if (input) input.value = P[key];
+        if (output) output.textContent = P[key];
+      });
+      if (modeSelect) modeSelect.value = P.mode;
+      if (autoCheckbox) autoCheckbox.checked = !!P.auto;
+      if (cwInput) cwInput.value = P.cw || '';
+      if (chInput) chInput.value = P.ch || '';
+      if (fitSelect) fitSelect.value = P.fit;
+    }
+
+    // One-Click Presets: Studio Noir (High Contrast Mono + Subject Focus), True Color, Aurora, Ember
+    const presetNoir = document.getElementById('preset-noir');
+    const presetColor = document.getElementById('preset-color');
+    const presetAurora = document.getElementById('preset-aurora');
+    const presetEmber = document.getElementById('preset-ember');
+
+    function updateActivePreset(btn) {
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+    }
+
+    if (presetNoir) {
+      presetNoir.addEventListener('click', () => {
+        P.mode = 'high-contrast-mono';
+        P.contrast = 2.0;
+        P.subjectFocus = 1.3;
+        P.cutoff = 36;
+        P.brightCutoff = 255;
+        P.bright = 1.25;
+        P.spacing = 2.5;
+        P.size = 1.5;
+        P.auto = 1;
+        syncControlsUI();
+        updateActivePreset(presetNoir);
+        recolor();
+        init(true);
+        showMsg('Applied Studio Noir: High-Contrast Mono & Subject Focus');
+      });
+    }
+
+    if (presetColor) {
+      presetColor.addEventListener('click', () => {
+        P.mode = 'original';
+        P.contrast = 1.0;
+        P.subjectFocus = 0.0;
+        P.cutoff = 28;
+        P.brightCutoff = 255;
+        P.bright = 1.15;
+        P.spacing = 3.0;
+        P.size = 1.6;
+        P.auto = 1;
+        syncControlsUI();
+        updateActivePreset(presetColor);
+        recolor();
+        init(true);
+        showMsg('Applied True Color Mode');
+      });
+    }
+
+    if (presetAurora) {
+      presetAurora.addEventListener('click', () => {
+        P.mode = 'aurora';
+        P.contrast = 1.2;
+        P.bright = 1.2;
+        syncControlsUI();
+        updateActivePreset(presetAurora);
+        recolor();
+        showMsg('Applied Aurora Spectrum Mode');
+      });
+    }
+
+    if (presetEmber) {
+      presetEmber.addEventListener('click', () => {
+        P.mode = 'ember';
+        P.contrast = 1.4;
+        P.bright = 1.2;
+        syncControlsUI();
+        updateActivePreset(presetEmber);
+        recolor();
+        showMsg('Applied Ember Flame Mode');
+      });
+    }
+
     // Export buttons
     const exportPngBtn = document.getElementById('export-png-btn') || document.getElementById('xp');
     const transCheckbox = document.getElementById('transparent-png') || document.getElementById('xt');
@@ -938,17 +1064,9 @@
     if (resetBtn) {
       resetBtn.addEventListener('click', () => {
         Object.assign(P, DEF);
-        SLIDERS.forEach(({ key }) => {
-          const input = document.getElementById(key);
-          const output = document.getElementById(`${key}-val`) || document.getElementById(`${key}-value`);
-          if (input) input.value = P[key];
-          if (output) output.textContent = P[key];
-        });
-        if (modeSelect) modeSelect.value = P.mode;
-        if (autoCheckbox) autoCheckbox.checked = true;
-        if (cwInput) cwInput.value = '';
-        if (chInput) chInput.value = '';
-        if (fitSelect) fitSelect.value = 'contain';
+        syncControlsUI();
+        updateActivePreset(presetColor);
+        recolor();
         init(true);
         showMsg('Settings reset to default');
       });
@@ -1023,7 +1141,6 @@
       inp.addEventListener('change', e => {
         if (e.target.files && e.target.files[0]) {
           loadFile(e.target.files[0]);
-          if (motivateBanner) motivateBanner.classList.add('dismissed');
         }
       });
     });
@@ -1031,7 +1148,7 @@
 
   // --- Pointer & Input Event Listeners ---
   function setupInputEvents() {
-    const isUIElement = el => el && el.closest && el.closest('#controls, #panel, .panel, .app-header, .render-actions-bar, .motivate-banner, .panel-backdrop, button, input, select, label');
+    const isUIElement = el => el && el.closest && el.closest('#controls, #panel, .panel, .app-header, .render-actions-bar, .panel-backdrop, button, input, select, label');
 
     const handlePointerMove = e => {
       if (isUIElement(e.target)) {
