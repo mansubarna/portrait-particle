@@ -56,13 +56,14 @@
   const cv = document.getElementById('canvas') || document.getElementById('c');
   const ctx = cv.getContext('2d', { willReadFrequently: true });
   const panel = document.getElementById('controls') || document.getElementById('panel');
-  const toggleBtn = document.getElementById('toggle-controls') || document.getElementById('tg');
   const emptyState = document.getElementById('empty');
   const hintEl = document.getElementById('hint');
   const fpsEl = document.getElementById('fps-counter');
   const particleInfoEl = document.getElementById('particle-info');
   const resInfoEl = document.getElementById('res-info');
   const msgEl = document.getElementById('export-msg') || document.getElementById('xm');
+  const renderActionsBar = document.getElementById('render-actions-bar');
+  const motivateBanner = document.getElementById('motivate-banner');
 
   // Simulation state variables
   let W = 0, H = 0, dpr = 1;
@@ -104,6 +105,12 @@
     msgEl._timer = setTimeout(() => {
       msgEl.textContent = '';
     }, 4500);
+  }
+
+  function showRenderedActions() {
+    if (renderActionsBar) {
+      renderActionsBar.classList.remove('hidden');
+    }
   }
 
   function hsl(h, s, l) {
@@ -206,7 +213,10 @@
     if (emptyState) emptyState.style.display = 'none';
     cancelAnimationFrame(raf);
     fr = skipEntrance ? 400 : 0;
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    // Mobile optimization: clamp DPR to 1.5 on mobile to keep solid 60 FPS
+    const isMobile = window.innerWidth < 768;
+    dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2);
 
     const custom = P.cw > 0 && P.ch > 0;
     let w, h;
@@ -331,6 +341,9 @@
     if (particleInfoEl) {
       particleInfoEl.textContent = `Particles: ${n.toLocaleString()}`;
     }
+
+    // Reveal floating action buttons once rendered
+    showRenderedActions();
 
     loop();
   }
@@ -516,6 +529,7 @@
     reader.onload = () => {
       im.src = reader.result;
       showMsg(`Loaded ${file.name}`);
+      if (motivateBanner) motivateBanner.classList.add('dismissed');
     };
     reader.readAsDataURL(file);
   }
@@ -940,18 +954,74 @@
       });
     }
 
-    // Panel Toggle
-    if (toggleBtn && panel) {
-      toggleBtn.addEventListener('click', () => {
-        const isCollapsed = panel.classList.toggle('collapsed');
-        panel.classList.toggle('open', !isCollapsed);
-        toggleBtn.setAttribute('aria-expanded', !isCollapsed);
-      });
-      // Auto-open panel on wide desktop displays
-      if (window.innerWidth > 768) {
-        panel.classList.add('open');
+    // Panel Open & Close (Never overlaps render unless explicitly opened)
+    const panelBackdrop = document.getElementById('panel-backdrop');
+    const closePanelBtn = document.getElementById('close-panel-btn');
+    const headerCustomizeBtn = document.getElementById('header-customize-btn') || document.getElementById('toggle-controls');
+    const quickCustomizeBtn = document.getElementById('quick-customize-btn');
+    const quickSaveBtn = document.getElementById('quick-save-btn');
+    const quickReplayBtn = document.getElementById('quick-replay-btn');
+    const dismissBannerBtn = document.getElementById('dismiss-banner');
+
+    function openPanel() {
+      if (panel) {
         panel.classList.remove('collapsed');
+        panel.classList.add('open');
       }
+      if (panelBackdrop) panelBackdrop.classList.add('active');
+      if (headerCustomizeBtn) headerCustomizeBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closePanel() {
+      if (panel) {
+        panel.classList.add('collapsed');
+        panel.classList.remove('open');
+      }
+      if (panelBackdrop) panelBackdrop.classList.remove('active');
+      if (headerCustomizeBtn) headerCustomizeBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    if (headerCustomizeBtn) {
+      headerCustomizeBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (panel && panel.classList.contains('open')) {
+          closePanel();
+        } else {
+          openPanel();
+        }
+      });
+    }
+
+    if (quickCustomizeBtn) {
+      quickCustomizeBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        openPanel();
+      });
+    }
+
+    if (quickSaveBtn) {
+      quickSaveBtn.addEventListener('click', () => {
+        const transCheckbox = document.getElementById('transparent-png');
+        exportPNG(transCheckbox ? transCheckbox.checked : false);
+      });
+    }
+
+    if (quickReplayBtn) {
+      quickReplayBtn.addEventListener('click', () => init(false));
+    }
+
+    if (closePanelBtn) {
+      closePanelBtn.addEventListener('click', closePanel);
+    }
+
+    if (panelBackdrop) {
+      panelBackdrop.addEventListener('click', closePanel);
+    }
+
+    if (dismissBannerBtn && motivateBanner) {
+      dismissBannerBtn.addEventListener('click', () => {
+        motivateBanner.classList.add('dismissed');
+      });
     }
 
     // Demo image buttons
@@ -963,17 +1033,12 @@
       });
     });
 
-    // File inputs
-    const fileInputs = [
-      document.getElementById('file-input'),
-      document.getElementById('f'),
-      document.getElementById('f2')
-    ];
-    fileInputs.forEach(inp => {
-      if (!inp) return;
+    // Universal File Input Listeners
+    document.querySelectorAll('input[type="file"]').forEach(inp => {
       inp.addEventListener('change', e => {
         if (e.target.files && e.target.files[0]) {
           loadFile(e.target.files[0]);
+          if (motivateBanner) motivateBanner.classList.add('dismissed');
         }
       });
     });
@@ -981,7 +1046,7 @@
 
   // --- Pointer & Input Event Listeners ---
   function setupInputEvents() {
-    const isUIElement = el => el && el.closest && el.closest('#controls, #panel, .panel, .pill, button, input, select');
+    const isUIElement = el => el && el.closest && el.closest('#controls, #panel, .panel, .app-header, .render-actions-bar, .motivate-banner, .panel-backdrop, button, input, select, label');
 
     const handlePointerMove = e => {
       if (isUIElement(e.target)) {
@@ -1006,6 +1071,35 @@
         mx = my = -1e9;
       }
     });
+
+    // Direct, buttery-smooth mobile touch listeners (no gesture delay, no scroll bounce)
+    const handleTouch = e => {
+      if (isUIElement(e.target)) return;
+      if (e.touches && e.touches.length > 0) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = cv.getBoundingClientRect();
+        mx = (touch.clientX - rect.left) * dpr;
+        my = (touch.clientY - rect.top) * dpr;
+        if (hintEl) hintEl.style.opacity = '0';
+      }
+    };
+
+    const handleTouchEnd = e => {
+      if (e.touches && e.touches.length > 0) {
+        const touch = e.touches[0];
+        const rect = cv.getBoundingClientRect();
+        mx = (touch.clientX - rect.left) * dpr;
+        my = (touch.clientY - rect.top) * dpr;
+      } else {
+        mx = my = -1e9;
+      }
+    };
+
+    cv.addEventListener('touchstart', handleTouch, { passive: false });
+    cv.addEventListener('touchmove', handleTouch, { passive: false });
+    cv.addEventListener('touchend', handleTouchEnd, { passive: false });
+    cv.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 
     // Drag and Drop
     window.addEventListener('dragover', e => {
@@ -1054,7 +1148,11 @@
         e.preventDefault();
         init(false); // Replay entrance
       } else if (e.key === 'c' || e.key === 'C') {
-        if (toggleBtn) toggleBtn.click();
+        const headerBtn = document.getElementById('header-customize-btn');
+        if (headerBtn) headerBtn.click();
+      } else if (e.key === 'Escape') {
+        const closeBtn = document.getElementById('close-panel-btn');
+        if (closeBtn) closeBtn.click();
       }
     });
   }

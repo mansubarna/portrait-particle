@@ -1,32 +1,35 @@
 /* ============================================================
-   Particle Portrait - Modern Glassmorphism Stylesheet
+   Particle Portrait - Modern Glassmorphic Stylesheet
    ============================================================ */
 
 :root {
-  --bg: #07070a;
-  --fg: #e8e8ed;
-  --muted: #8e8ea0;
+  --bg: #060609;
+  --fg: #eef0f6;
+  --muted: #8c8ea0;
   --accent: #00d4aa;
-  --accent-hover: #1ae6bd;
+  --accent-hover: #1be7be;
   --accent-dim: rgba(0, 212, 170, 0.16);
-  --accent-glow: rgba(0, 212, 170, 0.35);
+  --accent-glow: rgba(0, 212, 170, 0.45);
   --cyan: #7ee7ff;
-  --panel-bg: rgba(16, 16, 24, 0.82);
-  --panel-border: rgba(255, 255, 255, 0.12);
-  --input-bg: rgba(10, 10, 16, 0.85);
+  --purple: #b388ff;
+  --panel-bg: rgba(14, 14, 22, 0.88);
+  --panel-border: rgba(255, 255, 255, 0.14);
+  --input-bg: rgba(10, 10, 16, 0.9);
   --input-border: rgba(255, 255, 255, 0.15);
   --btn-secondary: rgba(255, 255, 255, 0.08);
   --btn-secondary-hover: rgba(255, 255, 255, 0.16);
-  --shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-  --radius: 14px;
-  --radius-sm: 8px;
-  --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.7);
+  --shadow-pill: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 212, 170, 0.15);
+  --radius: 16px;
+  --radius-sm: 9px;
+  --transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
@@ -52,8 +55,9 @@ html, body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: radial-gradient(circle at center, #0f0f18 0%, #050508 100%);
+  background: radial-gradient(circle at center, #11111c 0%, #050508 100%);
   z-index: 1;
+  touch-action: none;
 }
 
 #canvas {
@@ -61,137 +65,390 @@ html, body {
   margin: auto;
   cursor: crosshair;
   touch-action: none;
-  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.85);
+  max-width: 100vw;
+  max-height: 100vh;
 }
 
 /* ============================================================
-   Top Action Pills & Floating UI
+   Top App Header (Branding & Global Navigation)
    ============================================================ */
 
-.pill {
+.app-header {
   position: fixed;
-  top: calc(14px + env(safe-area-inset-top, 0px));
-  font: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #cfcfcf;
-  border: 1px solid var(--panel-border);
-  padding: 9px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-  background: rgba(12, 12, 18, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: all var(--transition);
-  z-index: 20;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-}
-
-.pill:hover {
-  color: #ffffff;
-  border-color: var(--accent);
-  background: rgba(20, 20, 32, 0.85);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px var(--accent-dim);
-}
-
-.pill:active {
-  transform: translateY(0);
-}
-
-#toggle-controls {
-  left: calc(16px + env(safe-area-inset-left, 0px));
-}
-
-#quick-upload-pill {
-  right: calc(16px + env(safe-area-inset-right, 0px));
-}
-
-#demo-portrait-pill {
-  right: calc(160px + env(safe-area-inset-right, 0px));
-}
-
-/* ============================================================
-   Hint Banner
-   ============================================================ */
-
-.hint {
-  position: fixed;
+  top: 0;
   left: 0;
   right: 0;
-  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  text-align: center;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-  opacity: 0.85;
-  pointer-events: none;
-  transition: opacity 800ms ease;
-  z-index: 10;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  height: calc(56px + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) 16px 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(6, 6, 9, 0.85) 0%, rgba(6, 6, 9, 0.3) 70%, rgba(6, 6, 9, 0) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 30;
+  pointer-events: auto;
 }
 
-/* ============================================================
-   Drag & Drop Overlay
-   ============================================================ */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-body.drag::after {
-  content: "Drop image to create portrait";
-  position: fixed;
-  inset: 0;
+.brand-badge {
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(4, 4, 8, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: var(--accent);
-  letter-spacing: 0.22em;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, rgba(0, 212, 170, 0.25) 0%, rgba(126, 231, 255, 0.25) 100%);
+  border: 1px solid rgba(0, 212, 170, 0.4);
+  box-shadow: 0 0 16px var(--accent-dim);
+}
+
+.brand-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: 16px;
+  background: linear-gradient(135deg, #ffffff 30%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2;
+}
+
+.brand-sub {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Call to Action Button: Use Your Photo */
+.btn-cta {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #060609;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--cyan) 100%);
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  box-shadow: 0 0 20px var(--accent-glow);
+  transition: all var(--transition);
+  border: none;
+}
+
+.btn-cta:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 0 26px var(--accent);
+}
+
+.btn-cta.pulse {
+  animation: subtle-pulse 3s infinite ease-in-out;
+}
+
+@keyframes subtle-pulse {
+  0%, 100% { box-shadow: 0 0 16px var(--accent-dim); }
+  50% { box-shadow: 0 0 26px var(--accent-glow); }
+}
+
+.btn-nav {
+  font-size: 11px;
   font-weight: 600;
-  border: 3px dashed var(--accent);
-  margin: 16px;
-  border-radius: 20px;
-  z-index: 999;
-  pointer-events: none;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #cfcfcf;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--panel-border);
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition);
+}
+
+.btn-nav:hover {
+  color: #ffffff;
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* ============================================================
-   Control Panel
+   Floating Actions Bar (Shown Once Rendered)
+   ============================================================ */
+
+.render-actions-bar {
+  position: fixed;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translate(-50%, 0);
+  background: rgba(14, 14, 22, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--shadow-pill);
+  z-index: 25;
+  transition: opacity 350ms cubic-bezier(0.16, 1, 0.3, 1), transform 350ms cubic-bezier(0.16, 1, 0.3, 1), visibility 350ms;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.render-actions-bar.hidden {
+  opacity: 0;
+  transform: translate(-50%, 25px);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.action-pill {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #d8d8e2;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid transparent;
+  padding: 9px 15px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.action-pill:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.action-pill:active {
+  transform: translateY(0);
+}
+
+/* Quick Save Button (Highlighted) */
+.action-save {
+  background: linear-gradient(135deg, rgba(0, 212, 170, 0.22) 0%, rgba(126, 231, 255, 0.18) 100%);
+  border-color: rgba(0, 212, 170, 0.4);
+  color: var(--accent);
+}
+
+.action-save:hover {
+  background: var(--accent);
+  color: #060609;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+/* Quick Customize Button */
+.action-customize {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.action-customize:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+/* Quick Upload Pill */
+.action-upload {
+  border-color: rgba(179, 136, 255, 0.3);
+  color: #cfbcff;
+}
+
+.action-upload:hover {
+  border-color: var(--purple);
+  color: #ffffff;
+  background: rgba(179, 136, 255, 0.2);
+}
+
+/* ============================================================
+   Motivational Floating Banner
+   ============================================================ */
+
+.motivate-banner {
+  position: fixed;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(16, 16, 26, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 212, 170, 0.35);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(0, 212, 170, 0.12);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 24;
+  max-width: 90vw;
+  width: auto;
+  transition: opacity 300ms ease, transform 300ms ease, visibility 300ms;
+}
+
+.motivate-banner.dismissed {
+  opacity: 0;
+  transform: translate(-50%, 15px);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.banner-icon {
+  font-size: 18px;
+}
+
+.banner-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.banner-text strong {
+  font-size: 12px;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.banner-text span {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 6px;
+}
+
+.banner-upload-btn {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #060609;
+  background: var(--accent);
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.banner-upload-btn:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.banner-dismiss {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.banner-dismiss:hover {
+  color: #ffffff;
+}
+
+/* ============================================================
+   Backdrop Dimmer Overlay
+   ============================================================ */
+
+.panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 35;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--transition), visibility var(--transition);
+}
+
+.panel-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* ============================================================
+   Customize Panel (Desktop Drawer / Mobile Sheet)
    ============================================================ */
 
 .panel {
   position: fixed;
-  top: calc(58px + env(safe-area-inset-top, 0px));
+  top: calc(64px + env(safe-area-inset-top, 0px));
   left: calc(16px + env(safe-area-inset-left, 0px));
-  width: 290px;
-  max-height: calc(100vh - 84px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  width: 320px;
+  max-height: calc(100vh - 90px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
   background: var(--panel-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
-  z-index: 30;
-  transition: transform var(--transition), opacity var(--transition), visibility var(--transition);
+  z-index: 40;
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease, visibility 300ms;
   opacity: 1;
   visibility: visible;
+  transform: translateX(0);
 }
 
 .panel.collapsed {
-  transform: translateX(-320px);
+  transform: translateX(-360px);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+}
+
+.sheet-drag-handle {
+  display: none;
 }
 
 .panel-header {
@@ -210,9 +467,9 @@ body.drag::after {
 }
 
 .panel-title h2 {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #ffffff;
 }
@@ -231,16 +488,16 @@ body.drag::after {
 .panel-header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .icon-btn {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border: none;
   background: transparent;
   color: var(--muted);
-  border-radius: 6px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -253,17 +510,22 @@ body.drag::after {
   color: #ffffff;
 }
 
+.close-btn:hover {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.15);
+}
+
 #controls-content {
   flex: 1;
   overflow-y: auto;
-  padding: 14px 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 /* ============================================================
-   Section Headings
+   Section Headings & Controls
    ============================================================ */
 
 .section-title {
@@ -284,10 +546,6 @@ body.drag::after {
   height: 1px;
   background: rgba(255, 255, 255, 0.08);
 }
-
-/* ============================================================
-   Form Inputs & Control Groups
-   ============================================================ */
 
 .control-group {
   display: flex;
@@ -318,7 +576,7 @@ input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 5px;
+  height: 6px;
   background: var(--input-border);
   border-radius: 3px;
   outline: none;
@@ -333,8 +591,8 @@ input[type="range"]:hover {
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   background: var(--accent);
   border-radius: 50%;
   cursor: pointer;
@@ -348,8 +606,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 input[type="range"]::-moz-range-thumb {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   background: var(--accent);
   border: none;
   border-radius: 50%;
@@ -457,7 +715,7 @@ input[type="number"]:focus {
 .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #07070a;
+  color: #060609;
 }
 
 .btn-primary:hover {
@@ -508,6 +766,27 @@ input[type="number"]:focus {
 }
 
 /* ============================================================
+   Bottom Interaction Hint
+   ============================================================ */
+
+.hint {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.75;
+  pointer-events: none;
+  transition: opacity 800ms ease;
+  z-index: 10;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+/* ============================================================
    Scrollbars
    ============================================================ */
 
@@ -529,32 +808,84 @@ input[type="number"]:focus {
 }
 
 /* ============================================================
-   Mobile Responsiveness
+   Drag & Drop Screen Overlay
+   ============================================================ */
+
+body.drag::after {
+  content: "Drop image to create portrait";
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 4, 8, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--accent);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 16px;
+  font-weight: 700;
+  border: 3px dashed var(--accent);
+  margin: 16px;
+  border-radius: 20px;
+  z-index: 999;
+  pointer-events: none;
+}
+
+/* ============================================================
+   Mobile Responsiveness (Modal Bottom Sheet)
    ============================================================ */
 
 @media (max-width: 768px) {
-  #toggle-controls {
-    left: 12px;
-  }
-
-  #quick-upload-pill {
-    right: 12px;
-  }
-
-  #demo-portrait-pill {
+  .brand-sub {
     display: none;
   }
 
+  .btn-cta span {
+    font-size: 10px;
+  }
+
+  .render-actions-bar {
+    width: calc(100% - 24px);
+    max-width: 440px;
+    justify-content: space-around;
+    padding: 6px 6px;
+  }
+
+  .action-pill {
+    padding: 8px 10px;
+    font-size: 10px;
+    gap: 5px;
+  }
+
+  .motivate-banner {
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    width: calc(100% - 24px);
+    padding: 8px 12px;
+  }
+
+  /* Bottom sheet modal on mobile */
   .panel {
     top: auto;
     bottom: 0;
     left: 0;
     right: 0;
     width: 100%;
-    max-height: 60vh;
+    max-height: 75vh;
     border-radius: var(--radius) var(--radius) 0 0;
     border-bottom: none;
-    transform: translateY(100%);
+    transform: translateY(105%);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+  }
+
+  .sheet-drag-handle {
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    margin: 8px auto 2px auto;
   }
 
   .panel.open {
@@ -564,6 +895,12 @@ input[type="number"]:focus {
   }
 
   .panel.collapsed {
-    transform: translateY(100%);
+    transform: translateY(105%);
+    opacity: 0;
+  }
+
+  .hint {
+    bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+    font-size: 10px;
   }
 }

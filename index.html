@@ -2,57 +2,114 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="High-performance interactive particle portrait simulation with image-to-particle generation, physics turbulence, ambient dust, and recording.">
-  <title>Particle Portrait - Interactive Particle Simulation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="Particle Portrait - Turn any photo into an interactive living particle simulation with fluid physics and 60 FPS performance.">
+  <title>Particle Portrait - Living Particle Simulation</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Simulation Stage -->
+  <!-- Fullscreen Interactive Stage -->
   <main id="stage">
     <canvas id="canvas" aria-label="Particle Portrait Canvas"></canvas>
   </main>
 
-  <!-- Top Floating Action Pills -->
-  <button class="pill" id="toggle-controls" aria-label="Toggle Controls Panel" aria-expanded="true">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="4" y1="21" x2="4" y2="14"></line>
-      <line x1="4" y1="10" x2="4" y2="3"></line>
-      <line x1="12" y1="21" x2="12" y2="12"></line>
-      <line x1="12" y1="8" x2="12" y2="3"></line>
-      <line x1="20" y1="21" x2="20" y2="16"></line>
-      <line x1="20" y1="12" x2="20" y2="3"></line>
-      <line x1="1" y1="14" x2="7" y2="14"></line>
-      <line x1="9" y1="8" x2="15" y2="8"></line>
-      <line x1="17" y1="16" x2="23" y2="16"></line>
-    </svg>
-    <span>Controls</span>
-  </button>
+  <!-- Top App Header with App Name & Branding -->
+  <header id="app-header" class="app-header">
+    <div class="brand">
+      <div class="brand-badge" aria-hidden="true">✨</div>
+      <div class="brand-meta">
+        <h1 class="brand-title">Particle Portrait</h1>
+        <span class="brand-sub">Interactive Particle Simulation</span>
+      </div>
+    </div>
 
-  <button class="pill load-demo-btn" id="demo-portrait-pill" aria-label="Load Demo Portrait">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-      <circle cx="12" cy="7" r="4"></circle>
-    </svg>
-    <span>Demo Portrait</span>
-  </button>
+    <div class="header-actions">
+      <!-- High-visibility CTA to motivate uploading custom photo -->
+      <label class="btn-cta pulse" title="Upload your portrait or selfie">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+          <circle cx="12" cy="13" r="4"></circle>
+        </svg>
+        <span>Use Your Photo</span>
+        <input type="file" id="f-header" accept="image/*" hidden>
+      </label>
 
-  <label class="pill" id="quick-upload-pill" aria-label="Upload Custom Image">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-      <polyline points="17 8 12 3 7 8"></polyline>
-      <line x1="12" y1="3" x2="12" y2="15"></line>
-    </svg>
-    <span>Upload Image</span>
-    <input type="file" id="f" accept="image/*" hidden>
-  </label>
+      <button id="header-customize-btn" class="btn-nav" aria-label="Customize Settings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span>Customize</span>
+      </button>
+    </div>
+  </header>
 
-  <!-- Interactive Control Panel -->
-  <aside id="controls" class="panel open" role="region" aria-label="Simulation Settings">
+  <!-- Floating Action Bar: Appears Once Rendered (Save, Customize, Upload, Replay) -->
+  <div id="render-actions-bar" class="render-actions-bar hidden" role="toolbar" aria-label="Portrait Actions">
+    <button id="quick-save-btn" class="action-pill action-save" title="Save Particle Portrait Image (PNG)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      <span>Save</span>
+    </button>
+
+    <button id="quick-customize-btn" class="action-pill action-customize" title="Customize Particles, Physics & Colors">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span>Customize</span>
+    </button>
+
+    <label class="action-pill action-upload" title="Upload your own photo or selfie">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+        <circle cx="12" cy="13" r="4"></circle>
+      </svg>
+      <span>Your Photo</span>
+      <input type="file" id="f-dock" accept="image/*" hidden>
+    </label>
+
+    <button id="quick-replay-btn" class="action-pill action-replay" title="Replay Entrance Animation (Space)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="1 4 1 10 7 10"></polyline>
+        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+      </svg>
+      <span>Replay</span>
+    </button>
+  </div>
+
+  <!-- Motivational Floating Banner to Encourage Custom Photo Upload -->
+  <div class="motivate-banner" id="motivate-banner">
+    <div class="banner-content">
+      <span class="banner-icon">✨</span>
+      <div class="banner-text">
+        <strong>Transform Your Photo into Particles!</strong>
+        <span>Upload any selfie, portrait or picture to watch it come alive.</span>
+      </div>
+    </div>
+    <div class="banner-actions">
+      <label class="banner-upload-btn">
+        <span>Try Your Photo</span>
+        <input type="file" id="f-banner" accept="image/*" hidden>
+      </label>
+      <button class="banner-dismiss" id="dismiss-banner" aria-label="Dismiss banner">&times;</button>
+    </div>
+  </div>
+
+  <!-- Backdrop Dimmer Overlay for Mobile & Desktop -->
+  <div id="panel-backdrop" class="panel-backdrop"></div>
+
+  <!-- Interactive Customize Panel (Starts COLLAPSED so canvas is 100% visible) -->
+  <aside id="controls" class="panel collapsed" role="region" aria-label="Customize Settings">
+    <div class="sheet-drag-handle" aria-hidden="true"></div>
+
     <div class="panel-header">
       <div class="panel-title">
-        <h2>Particle Portrait</h2>
+        <h2>Customize Portrait</h2>
         <span class="badge">PRO</span>
       </div>
       <div class="panel-header-actions">
@@ -60,6 +117,12 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="1 4 1 10 7 10"></polyline>
             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+        </button>
+        <button id="close-panel-btn" class="icon-btn close-btn" title="Close Customize Panel">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
       </div>
@@ -77,10 +140,10 @@
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <span>Upload Image</span>
+            <span>Upload Photo</span>
             <input type="file" id="file-input" accept="image/*" hidden>
           </label>
-          <button type="button" class="btn load-demo-btn">Demo</button>
+          <button type="button" class="btn load-demo-btn">Demo Image</button>
         </div>
 
         <div class="control-group" style="margin-top: 4px;">
@@ -257,8 +320,8 @@
         <div class="section-title">Export &amp; Capture</div>
 
         <div class="btn-row">
-          <button type="button" class="btn" id="export-png-btn">PNG</button>
-          <button type="button" class="btn" id="export-webm-btn">WebM</button>
+          <button type="button" class="btn" id="export-png-btn">Export PNG</button>
+          <button type="button" class="btn" id="export-webm-btn">Record Video</button>
           <button type="button" class="btn" id="export-settings-btn">JSON</button>
         </div>
 
@@ -304,7 +367,7 @@
   </aside>
 
   <!-- Bottom Interaction Hint -->
-  <div class="hint" id="hint">Hover cursor over particles &middot; Click &amp; drag &middot; Drop, paste or upload image</div>
+  <div class="hint" id="hint">Touch or hover over particles to interact</div>
 
   <script src="app.js" defer></script>
 </body>
