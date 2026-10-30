@@ -12,14 +12,14 @@
   --accent-glow: rgba(0, 212, 170, 0.45);
   --cyan: #7ee7ff;
   --purple: #b388ff;
-  --panel-bg: rgba(14, 14, 22, 0.88);
+  --panel-bg: rgba(14, 14, 22, 0.9);
   --panel-border: rgba(255, 255, 255, 0.14);
   --input-bg: rgba(10, 10, 16, 0.9);
   --input-border: rgba(255, 255, 255, 0.15);
   --btn-secondary: rgba(255, 255, 255, 0.08);
   --btn-secondary-hover: rgba(255, 255, 255, 0.16);
   --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.7);
-  --shadow-pill: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 212, 170, 0.15);
+  --shadow-pill: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 212, 170, 0.15);
   --radius: 16px;
   --radius-sm: 9px;
   --transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -71,7 +71,7 @@ html, body {
 }
 
 /* ============================================================
-   Top App Header (Branding & Global Navigation)
+   Top App Header (Branding Only - Clean & Minimal)
    ============================================================ */
 
 .app-header {
@@ -79,35 +79,36 @@ html, body {
   top: 0;
   left: 0;
   right: 0;
-  height: calc(56px + env(safe-area-inset-top, 0px));
-  padding: env(safe-area-inset-top, 0px) 16px 0 16px;
+  height: calc(52px + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) 18px 0 18px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(180deg, rgba(6, 6, 9, 0.85) 0%, rgba(6, 6, 9, 0.3) 70%, rgba(6, 6, 9, 0) 100%);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  justify-content: flex-start;
+  background: linear-gradient(180deg, rgba(6, 6, 9, 0.75) 0%, rgba(6, 6, 9, 0.2) 65%, rgba(6, 6, 9, 0) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 30;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
+  pointer-events: auto;
 }
 
 .brand-badge {
-  font-size: 16px;
+  font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   background: linear-gradient(135deg, rgba(0, 212, 170, 0.25) 0%, rgba(126, 231, 255, 0.25) 100%);
-  border: 1px solid rgba(0, 212, 170, 0.4);
-  box-shadow: 0 0 16px var(--accent-dim);
+  border: 1px solid rgba(0, 212, 170, 0.35);
+  box-shadow: 0 0 14px var(--accent-dim);
 }
 
 .brand-meta {
@@ -116,11 +117,11 @@ html, body {
 }
 
 .brand-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: linear-gradient(135deg, #ffffff 30%, var(--cyan) 100%);
+  background: linear-gradient(135deg, #ffffff 40%, var(--cyan) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height: 1.2;
@@ -129,74 +130,12 @@ html, body {
 .brand-sub {
   font-size: 10px;
   color: var(--muted);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   font-weight: 500;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Call to Action Button: Use Your Photo */
-.btn-cta {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #060609;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--cyan) 100%);
-  padding: 8px 14px;
-  border-radius: 999px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  box-shadow: 0 0 20px var(--accent-glow);
-  transition: all var(--transition);
-  border: none;
-}
-
-.btn-cta:hover {
-  transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 0 26px var(--accent);
-}
-
-.btn-cta.pulse {
-  animation: subtle-pulse 3s infinite ease-in-out;
-}
-
-@keyframes subtle-pulse {
-  0%, 100% { box-shadow: 0 0 16px var(--accent-dim); }
-  50% { box-shadow: 0 0 26px var(--accent-glow); }
-}
-
-.btn-nav {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #cfcfcf;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--panel-border);
-  padding: 8px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all var(--transition);
-}
-
-.btn-nav:hover {
-  color: #ffffff;
-  border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.15);
-}
-
 /* ============================================================
-   Floating Actions Bar (Shown Once Rendered)
+   Floating Actions Bar (Single Consolidated Bar Once Rendered)
    ============================================================ */
 
 .render-actions-bar {
@@ -257,20 +196,22 @@ html, body {
   transform: translateY(0);
 }
 
-/* Quick Save Button (Highlighted) */
-.action-save {
-  background: linear-gradient(135deg, rgba(0, 212, 170, 0.22) 0%, rgba(126, 231, 255, 0.18) 100%);
-  border-color: rgba(0, 212, 170, 0.4);
-  color: var(--accent);
+/* Your Photo Pill (Primary Inviting CTA) */
+.action-upload {
+  background: linear-gradient(135deg, rgba(0, 212, 170, 0.28) 0%, rgba(126, 231, 255, 0.22) 100%);
+  border-color: rgba(0, 212, 170, 0.45);
+  color: #ffffff;
+  box-shadow: 0 0 16px var(--accent-dim);
 }
 
-.action-save:hover {
-  background: var(--accent);
+.action-upload:hover {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--cyan) 100%);
   color: #060609;
-  box-shadow: 0 0 16px var(--accent-glow);
+  border-color: transparent;
+  box-shadow: 0 0 24px var(--accent-glow);
 }
 
-/* Quick Customize Button */
+/* Customize Button */
 .action-customize {
   border-color: rgba(255, 255, 255, 0.16);
 }
@@ -280,116 +221,25 @@ html, body {
   color: var(--cyan);
 }
 
-/* Quick Upload Pill */
-.action-upload {
-  border-color: rgba(179, 136, 255, 0.3);
-  color: #cfbcff;
+/* Save Button */
+.action-save {
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
-.action-upload:hover {
-  border-color: var(--purple);
-  color: #ffffff;
-  background: rgba(179, 136, 255, 0.2);
+.action-save:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
-/* ============================================================
-   Motivational Floating Banner
-   ============================================================ */
-
-.motivate-banner {
-  position: fixed;
-  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(16, 16, 26, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 212, 170, 0.35);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(0, 212, 170, 0.12);
-  border-radius: 14px;
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 24;
-  max-width: 90vw;
-  width: auto;
-  transition: opacity 300ms ease, transform 300ms ease, visibility 300ms;
-}
-
-.motivate-banner.dismissed {
-  opacity: 0;
-  transform: translate(-50%, 15px);
-  pointer-events: none;
-  visibility: hidden;
-}
-
-.banner-content {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.banner-icon {
-  font-size: 18px;
-}
-
-.banner-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.banner-text strong {
-  font-size: 12px;
-  color: #ffffff;
-  letter-spacing: 0.02em;
-}
-
-.banner-text span {
-  font-size: 10px;
+/* Replay Button */
+.action-replay {
+  border-color: rgba(255, 255, 255, 0.1);
   color: var(--muted);
-  letter-spacing: 0.02em;
 }
 
-.banner-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: 6px;
-}
-
-.banner-upload-btn {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #060609;
-  background: var(--accent);
-  padding: 6px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all var(--transition);
-}
-
-.banner-upload-btn:hover {
-  background: var(--accent-hover);
-  box-shadow: 0 0 12px var(--accent-glow);
-}
-
-.banner-dismiss {
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-size: 18px;
-  line-height: 1;
-  padding: 4px;
-  cursor: pointer;
-  transition: color var(--transition);
-}
-
-.banner-dismiss:hover {
+.action-replay:hover {
   color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* ============================================================
@@ -842,10 +692,6 @@ body.drag::after {
     display: none;
   }
 
-  .btn-cta span {
-    font-size: 10px;
-  }
-
   .render-actions-bar {
     width: calc(100% - 24px);
     max-width: 440px;
@@ -857,12 +703,6 @@ body.drag::after {
     padding: 8px 10px;
     font-size: 10px;
     gap: 5px;
-  }
-
-  .motivate-banner {
-    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
-    width: calc(100% - 24px);
-    padding: 8px 12px;
   }
 
   /* Bottom sheet modal on mobile */

@@ -957,11 +957,9 @@
     // Panel Open & Close (Never overlaps render unless explicitly opened)
     const panelBackdrop = document.getElementById('panel-backdrop');
     const closePanelBtn = document.getElementById('close-panel-btn');
-    const headerCustomizeBtn = document.getElementById('header-customize-btn') || document.getElementById('toggle-controls');
     const quickCustomizeBtn = document.getElementById('quick-customize-btn');
     const quickSaveBtn = document.getElementById('quick-save-btn');
     const quickReplayBtn = document.getElementById('quick-replay-btn');
-    const dismissBannerBtn = document.getElementById('dismiss-banner');
 
     function openPanel() {
       if (panel) {
@@ -969,7 +967,7 @@
         panel.classList.add('open');
       }
       if (panelBackdrop) panelBackdrop.classList.add('active');
-      if (headerCustomizeBtn) headerCustomizeBtn.setAttribute('aria-expanded', 'true');
+      if (quickCustomizeBtn) quickCustomizeBtn.setAttribute('aria-expanded', 'true');
     }
 
     function closePanel() {
@@ -978,24 +976,17 @@
         panel.classList.remove('open');
       }
       if (panelBackdrop) panelBackdrop.classList.remove('active');
-      if (headerCustomizeBtn) headerCustomizeBtn.setAttribute('aria-expanded', 'false');
+      if (quickCustomizeBtn) quickCustomizeBtn.setAttribute('aria-expanded', 'false');
     }
 
-    if (headerCustomizeBtn) {
-      headerCustomizeBtn.addEventListener('click', e => {
+    if (quickCustomizeBtn) {
+      quickCustomizeBtn.addEventListener('click', e => {
         e.stopPropagation();
         if (panel && panel.classList.contains('open')) {
           closePanel();
         } else {
           openPanel();
         }
-      });
-    }
-
-    if (quickCustomizeBtn) {
-      quickCustomizeBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        openPanel();
       });
     }
 
@@ -1016,12 +1007,6 @@
 
     if (panelBackdrop) {
       panelBackdrop.addEventListener('click', closePanel);
-    }
-
-    if (dismissBannerBtn && motivateBanner) {
-      dismissBannerBtn.addEventListener('click', () => {
-        motivateBanner.classList.add('dismissed');
-      });
     }
 
     // Demo image buttons
@@ -1148,8 +1133,8 @@
         e.preventDefault();
         init(false); // Replay entrance
       } else if (e.key === 'c' || e.key === 'C') {
-        const headerBtn = document.getElementById('header-customize-btn');
-        if (headerBtn) headerBtn.click();
+        const custBtn = document.getElementById('quick-customize-btn');
+        if (custBtn) custBtn.click();
       } else if (e.key === 'Escape') {
         const closeBtn = document.getElementById('close-panel-btn');
         if (closeBtn) closeBtn.click();
