@@ -52,3 +52,4 @@ python3 -m http.server 8080
 - [`style.css`](file:///home/subarna/.openclaw/agents/gyancha/portrait-particle/style.css) - Modern dark-mode glassmorphic interface and responsive design
 - [`app.js`](file:///home/subarna/.openclaw/agents/gyancha/portrait-particle/app.js) - Complete particle physics simulation engine, video recorder, and event pipeline
 - [`particle-portrait.html`](file:///home/subarna/.openclaw/agents/gyancha/portrait-particle/particle-portrait.html) - Standalone single-file build
+# portrait-particle
