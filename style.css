@@ -266,112 +266,401 @@ html, body {
 }
 
 /* ============================================================
-   Customize Panel (Desktop Drawer / Mobile Sheet)
+   Customize Console (Horizontal Tool Carousel + Active Slider)
    ============================================================ */
 
-.panel {
+.customize-console {
   position: fixed;
-  top: calc(64px + env(safe-area-inset-top, 0px));
-  left: calc(16px + env(safe-area-inset-left, 0px));
-  width: 320px;
-  max-height: calc(100vh - 90px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-  background: var(--panel-bg);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-lg);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  background: rgba(12, 12, 20, 0.94);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.75);
   display: flex;
   flex-direction: column;
-  z-index: 40;
-  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease, visibility 300ms;
+  overflow: hidden;
+  z-index: 45;
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1), opacity 320ms ease;
+  transform: translateY(0);
   opacity: 1;
-  visibility: visible;
-  transform: translateX(0);
 }
 
-.panel.collapsed {
-  transform: translateX(-360px);
+.customize-console.collapsed {
+  transform: translateY(105%);
   opacity: 0;
-  visibility: hidden;
   pointer-events: none;
 }
 
-.sheet-drag-handle {
-  display: none;
+.console-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 2px;
+  margin: 8px auto 4px auto;
 }
 
-.panel-header {
+.console-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--panel-border);
-  background: rgba(255, 255, 255, 0.02);
+  padding: 6px 18px 8px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.panel-title {
+.active-tool-info {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
 }
 
-.panel-title h2 {
-  font-size: 13px;
+.active-tool-name {
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #ffffff;
 }
 
-.panel-title .badge {
-  font-size: 9px;
+.active-tool-val {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--accent-dim);
   color: var(--accent);
-  border: 1px solid rgba(0, 212, 170, 0.3);
 }
 
-.panel-header-actions {
+.console-header-actions {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.icon-btn {
+.console-icon-btn {
   width: 30px;
   height: 30px;
-  border: none;
-  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--muted);
-  border-radius: 7px;
-  display: flex;
+  border-radius: 8px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all var(--transition);
 }
 
-.icon-btn:hover {
-  background: var(--btn-secondary);
+.console-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
 }
 
-.close-btn:hover {
+.console-icon-btn.close-btn:hover {
   color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.15);
+  border-color: rgba(255, 107, 107, 0.3);
+  background: rgba(255, 107, 107, 0.12);
 }
 
-#controls-content {
+/* ============================================================
+   Active Tool Control Area (Slider / Palette / Canvas / Export)
+   ============================================================ */
+
+.active-control-area {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+}
+
+.tool-view {
+  display: none;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-view.active {
+  display: flex;
+}
+
+/* Slider View */
+.slider-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.slider-bound {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 500;
+  min-width: 24px;
+}
+
+.slider-bound.min-bound {
+  text-align: right;
+}
+
+.slider-bound.max-bound {
+  text-align: left;
+}
+
+#active-slider {
   flex: 1;
-  overflow-y: auto;
-  padding: 16px;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+#active-slider:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+#active-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 14px var(--accent-glow);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  border: 2px solid #ffffff;
+}
+
+#active-slider::-webkit-slider-thumb:hover,
+#active-slider::-webkit-slider-thumb:active {
+  transform: scale(1.18);
+}
+
+#active-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 14px var(--accent-glow);
+  cursor: pointer;
+  border: 2px solid #ffffff;
+}
+
+/* Palette Chips View */
+.palette-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 4px 0;
+  justify-content: center;
+}
+
+.palette-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.chip-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--fg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.chip-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.chip-btn.active {
+  background: var(--accent);
+  color: #050508;
+  font-weight: 700;
+  border-color: var(--accent);
+  box-shadow: 0 0 14px var(--accent-dim);
+}
+
+.chip-primary {
+  background: var(--accent);
+  color: #000000;
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+.chip-primary:hover {
+  background: var(--accent-hover);
+  color: #000000;
+}
+
+.chip-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.chip-toggle input {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* Canvas View */
+.canvas-controls-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.canvas-controls-inline input[type="number"] {
+  width: 84px;
+  text-align: center;
+}
+
+.canvas-controls-inline select {
+  width: auto;
+  min-width: 100px;
+}
+
+/* Export View */
+.export-inline-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ============================================================
+   Horizontal Scrollable Tools Carousel
+   ============================================================ */
+
+.tools-carousel {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 18px 14px 18px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tools-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-tool {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  align-items: center;
+  justify-content: center;
+  min-width: 62px;
+  max-width: 72px;
+  padding: 8px 4px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.carousel-tool:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.carousel-tool.active {
+  background: rgba(0, 212, 170, 0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 14px rgba(0, 212, 170, 0.2);
+}
+
+.carousel-tool-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-bottom: 4px;
+}
+
+.carousel-tool-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+  stroke: currentColor;
+  fill: none;
+}
+
+.carousel-tool.active .carousel-tool-icon svg {
+  stroke: var(--accent);
+}
+
+.carousel-tool-name {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60px;
+  line-height: 1.2;
+}
+
+/* ============================================================
+   Diagnostics Sub-bar
+   ============================================================ */
+
+.console-diagnostics {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 18px calc(6px + env(safe-area-inset-bottom, 0px)) 18px;
+  font-size: 9px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: var(--muted);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.console-status-msg {
+  color: var(--cyan);
+  margin-left: auto;
+  font-weight: 600;
 }
 
 /* ============================================================
@@ -684,7 +973,7 @@ body.drag::after {
 }
 
 /* ============================================================
-   Mobile Responsiveness (Modal Bottom Sheet)
+   Mobile Responsiveness
    ============================================================ */
 
 @media (max-width: 768px) {
@@ -693,10 +982,11 @@ body.drag::after {
   }
 
   .render-actions-bar {
-    width: calc(100% - 24px);
-    max-width: 440px;
+    width: calc(100% - 20px);
+    max-width: 420px;
     justify-content: space-around;
     padding: 6px 6px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
   .action-pill {
@@ -705,42 +995,19 @@ body.drag::after {
     gap: 5px;
   }
 
-  /* Bottom sheet modal on mobile */
-  .panel {
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-height: 75vh;
-    border-radius: var(--radius) var(--radius) 0 0;
-    border-bottom: none;
-    transform: translateY(105%);
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+  .customize-console {
+    max-width: 100%;
+    border-radius: 18px 18px 0 0;
   }
 
-  .sheet-drag-handle {
-    display: block;
-    width: 36px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 2px;
-    margin: 8px auto 2px auto;
-  }
-
-  .panel.open {
-    transform: translateY(0);
-    visibility: visible;
-    opacity: 1;
-  }
-
-  .panel.collapsed {
-    transform: translateY(105%);
-    opacity: 0;
+  .carousel-tool {
+    min-width: 58px;
+    max-width: 66px;
+    padding: 7px 3px;
   }
 
   .hint {
-    bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
     font-size: 10px;
   }
 }

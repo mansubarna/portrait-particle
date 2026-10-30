@@ -36,7 +36,7 @@
       <input type="file" id="f-dock" accept="image/*" hidden>
     </label>
 
-    <button id="quick-customize-btn" class="action-pill action-customize" title="Customize Particles, Physics & Colors">
+    <button id="quick-customize-btn" class="action-pill action-customize" title="Customize Particles, Physics & Colors" aria-expanded="false">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"></circle>
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -62,27 +62,33 @@
     </button>
   </div>
 
-  <!-- Backdrop Dimmer Overlay for Mobile & Desktop -->
+  <!-- Backdrop Dimmer Overlay -->
   <div id="panel-backdrop" class="panel-backdrop"></div>
 
-  <!-- Interactive Customize Panel (Starts COLLAPSED so canvas is 100% visible) -->
-  <aside id="controls" class="panel collapsed" role="region" aria-label="Customize Settings">
-    <div class="sheet-drag-handle" aria-hidden="true"></div>
+  <!-- Interactive Customize Console (Horizontal Scrollable Tool Carousel + Active Slider) -->
+  <aside id="controls" class="customize-console collapsed" role="region" aria-label="Customize Console">
+    <div class="console-handle" aria-hidden="true"></div>
 
-    <div class="panel-header">
-      <div class="panel-title">
-        <h2>Customize Portrait</h2>
-        <span class="badge">PRO</span>
+    <div class="console-header">
+      <div class="active-tool-info">
+        <span class="active-tool-name" id="active-tool-label">Particle Size</span>
+        <span class="active-tool-val" id="active-tool-value">1.6</span>
       </div>
-      <div class="panel-header-actions">
-        <button id="replay-btn" class="icon-btn" title="Replay Entrance Animation (Space)">
+      <div class="console-header-actions">
+        <button id="console-replay-btn" class="console-icon-btn" title="Replay Entrance Animation (Space)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="1 4 1 10 7 10"></polyline>
             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
           </svg>
         </button>
-        <button id="close-panel-btn" class="icon-btn close-btn" title="Close Customize Panel">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <button id="reset-btn" class="console-icon-btn" title="Reset All Settings to Defaults">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+        </button>
+        <button id="close-panel-btn" class="console-icon-btn close-btn" title="Close Console">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -90,241 +96,67 @@
       </div>
     </div>
 
-    <div id="controls-content">
-      <!-- Section 1: Image & Palette -->
-      <section class="control-group">
-        <div class="section-title">Image &amp; Palette</div>
-
-        <div class="btn-row">
-          <label class="btn btn-primary file-input-btn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            <span>Upload Photo</span>
-            <input type="file" id="file-input" accept="image/*" hidden>
-          </label>
-          <button type="button" class="btn load-demo-btn">Demo Image</button>
+    <!-- Active Tool Control Area (Shows the slider for the active tool) -->
+    <div class="active-control-area">
+      <!-- Universal Active Slider View -->
+      <div id="tool-slider-view" class="tool-view active">
+        <div class="slider-wrapper">
+          <span class="slider-bound min-bound" id="active-slider-min">0.8</span>
+          <input type="range" id="active-slider" min="0.8" max="5.0" step="0.1" value="1.6" aria-label="Tool adjustment slider">
+          <span class="slider-bound max-bound" id="active-slider-max">5.0</span>
         </div>
+      </div>
 
-        <div class="control-group" style="margin-top: 4px;">
-          <label for="palette-mode" class="control-label"><span>Palette Mode</span></label>
-          <select id="palette-mode">
-            <option value="original">Original + Tints</option>
-            <option value="mono">Monochrome (Silver/White)</option>
-            <option value="aurora">Aurora (Prismatic HSL)</option>
-            <option value="ember">Ember (Fiery Gold Glow)</option>
-          </select>
+      <!-- Palette Chips View (Active when Palette tool is selected) -->
+      <div id="tool-palette-view" class="tool-view">
+        <div class="palette-chips">
+          <button type="button" class="chip-btn active" data-mode="original">Original + Tints</button>
+          <button type="button" class="chip-btn" data-mode="mono">Monochrome</button>
+          <button type="button" class="chip-btn" data-mode="aurora">Aurora Spectrum</button>
+          <button type="button" class="chip-btn" data-mode="ember">Ember Flame</button>
         </div>
+      </div>
 
-        <label class="checkbox-label" style="margin-top: 4px;">
-          <span>Auto-remove Backdrop</span>
-          <input type="checkbox" id="auto-backdrop" checked>
-        </label>
-      </section>
-
-      <!-- Section 2: Dynamics & Flow -->
-      <section class="control-group">
-        <div class="section-title">Particle Dynamics</div>
-
-        <div class="control-group">
-          <label for="spacing" class="control-label">
-            <span>Spacing (Density)</span>
-            <output id="spacing-val">3.0</output>
-          </label>
-          <input type="range" id="spacing" min="2.5" max="8" step="0.5" value="3">
-        </div>
-
-        <div class="control-group">
-          <label for="size" class="control-label">
-            <span>Particle Size</span>
-            <output id="size-val">1.6</output>
-          </label>
-          <input type="range" id="size" min="0.8" max="5" step="0.1" value="1.6">
-        </div>
-
-        <div class="control-group">
-          <label for="radius" class="control-label">
-            <span>Hover Radius</span>
-            <output id="radius-val">40</output>
-          </label>
-          <input type="range" id="radius" min="15" max="160" step="1" value="40">
-        </div>
-
-        <div class="control-group">
-          <label for="soft" class="control-label">
-            <span>Edge Softness</span>
-            <output id="soft-val">0.5</output>
-          </label>
-          <input type="range" id="soft" min="0" max="1" step="0.05" value="0.5">
-        </div>
-
-        <div class="control-group">
-          <label for="lift" class="control-label">
-            <span>Lift Height</span>
-            <output id="lift-val">1.0</output>
-          </label>
-          <input type="range" id="lift" min="0.2" max="3" step="0.1" value="1">
-        </div>
-
-        <div class="control-group">
-          <label for="speed" class="control-label">
-            <span>Flow Speed</span>
-            <output id="speed-val">1.0</output>
-          </label>
-          <input type="range" id="speed" min="0.3" max="3" step="0.1" value="1">
-        </div>
-
-        <div class="control-group">
-          <label for="jitter" class="control-label">
-            <span>Particle Jitter</span>
-            <output id="jitter-val">1.0</output>
-          </label>
-          <input type="range" id="jitter" min="0" max="3" step="0.1" value="1">
-        </div>
-
-        <div class="control-group">
-          <label for="shimmer" class="control-label">
-            <span>Shimmer Modulation</span>
-            <output id="shimmer-val">1.0</output>
-          </label>
-          <input type="range" id="shimmer" min="0" max="2" step="0.1" value="1">
-        </div>
-      </section>
-
-      <!-- Section 3: Atmosphere & Color -->
-      <section class="control-group">
-        <div class="section-title">Atmosphere &amp; Color</div>
-
-        <div class="control-group">
-          <label for="fuzz" class="control-label">
-            <span>Ambient Dust Fuzz</span>
-            <output id="fuzz-val">1.0</output>
-          </label>
-          <input type="range" id="fuzz" min="0" max="2" step="0.05" value="1">
-        </div>
-
-        <div class="control-group">
-          <label for="fuzzSize" class="control-label">
-            <span>Dust Particle Size</span>
-            <output id="fuzzSize-val">1.0</output>
-          </label>
-          <input type="range" id="fuzzSize" min="1" max="4" step="0.5" value="1">
-        </div>
-
-        <div class="control-group">
-          <label for="tint" class="control-label">
-            <span>Tint Variety</span>
-            <output id="tint-val">1.0</output>
-          </label>
-          <input type="range" id="tint" min="0" max="3" step="0.1" value="1">
-        </div>
-
-        <div class="control-group">
-          <label for="spread" class="control-label">
-            <span>Contrast Spread</span>
-            <output id="spread-val">1.0</output>
-          </label>
-          <input type="range" id="spread" min="0" max="2" step="0.1" value="1">
-        </div>
-
-        <div class="control-group">
-          <label for="bright" class="control-label">
-            <span>Brightness</span>
-            <output id="bright-val">1.15</output>
-          </label>
-          <input type="range" id="bright" min="0.5" max="2" step="0.05" value="1.15">
-        </div>
-
-        <div class="control-group">
-          <label for="cutoff" class="control-label">
-            <span>Dark Threshold</span>
-            <output id="cutoff-val">28</output>
-          </label>
-          <input type="range" id="cutoff" min="0" max="120" step="1" value="28">
-        </div>
-      </section>
-
-      <!-- Section 4: Canvas Sizing & Fit -->
-      <section class="control-group">
-        <div class="section-title">Canvas &amp; Fit</div>
-
-        <div class="control-group">
-          <label class="control-label"><span>Resolution (px)</span></label>
-          <div class="two-col">
-            <input type="number" id="cw" min="100" max="3000" placeholder="Auto Width">
-            <input type="number" id="ch" min="100" max="3000" placeholder="Auto Height">
-          </div>
-        </div>
-
-        <label class="checkbox-label" style="margin-top: 4px;">
-          <span>Lock Aspect Ratio</span>
-          <input type="checkbox" id="keep-ratio" checked>
-        </label>
-
-        <div class="control-group" style="margin-top: 4px;">
-          <label for="fit" class="control-label"><span>Image Fit</span></label>
+      <!-- Canvas Dimension & Fit View (Active when Canvas tool is selected) -->
+      <div id="tool-canvas-view" class="tool-view">
+        <div class="canvas-controls-inline">
+          <input type="number" id="cw" min="100" max="3000" placeholder="Auto W">
+          <span>&times;</span>
+          <input type="number" id="ch" min="100" max="3000" placeholder="Auto H">
           <select id="fit">
-            <option value="contain">Contain (Fit screen)</option>
-            <option value="cover">Cover (Fill &amp; crop)</option>
+            <option value="contain">Contain</option>
+            <option value="cover">Cover</option>
             <option value="stretch">Stretch</option>
           </select>
+          <button type="button" class="chip-btn" id="auto-size">Auto Fit</button>
         </div>
+      </div>
 
-        <button type="button" class="btn" id="auto-size" style="margin-top: 4px;">
-          <span>Fit Screen (Auto)</span>
-        </button>
-      </section>
-
-      <!-- Section 5: Export & Record -->
-      <section class="control-group">
-        <div class="section-title">Export &amp; Capture</div>
-
-        <div class="btn-row">
-          <button type="button" class="btn" id="export-png-btn">Export PNG</button>
-          <button type="button" class="btn" id="export-webm-btn">Record Video</button>
-          <button type="button" class="btn" id="export-settings-btn">JSON</button>
+      <!-- Export & Record View (Active when Export tool is selected) -->
+      <div id="tool-export-view" class="tool-view">
+        <div class="export-inline-bar">
+          <button type="button" class="chip-btn chip-primary" id="export-png-btn">Export PNG</button>
+          <label class="chip-toggle">
+            <input type="checkbox" id="transparent-png">
+            <span>Transparent</span>
+          </label>
+          <button type="button" class="chip-btn" id="export-webm-btn">Record Video (6s)</button>
+          <button type="button" class="chip-btn" id="export-settings-btn">JSON</button>
         </div>
-
-        <label class="checkbox-label" style="margin-top: 4px;">
-          <span>Transparent PNG</span>
-          <input type="checkbox" id="transparent-png">
-        </label>
-
-        <div class="control-group" style="margin-top: 4px;">
-          <label for="video-seconds" class="control-label"><span>Video Duration (s)</span></label>
-          <input type="number" id="video-seconds" min="2" max="30" value="6">
-        </div>
-
-        <label class="checkbox-label" style="margin-top: 4px;">
-          <span>Record Build-in Entrance</span>
-          <input type="checkbox" id="video-build-in" checked>
-        </label>
-
-        <div class="status-msg" id="export-msg"></div>
-      </section>
-
-      <!-- Section 6: Reset Controls -->
-      <section class="control-group">
-        <button type="button" class="btn" id="reset-btn">Reset Defaults</button>
-      </section>
+      </div>
     </div>
 
-    <!-- Live Diagnostics Footer -->
-    <div class="panel-footer">
-      <div class="panel-footer-row">
-        <span>Performance</span>
-        <span id="fps-counter">FPS: 60</span>
-      </div>
-      <div class="panel-footer-row">
-        <span>Particle Count</span>
-        <span id="particle-info">Particles: --</span>
-      </div>
-      <div class="panel-footer-row">
-        <span>Stage Buffer</span>
-        <span id="res-info">--</span>
-      </div>
+    <!-- Horizontal Scrollable Tool Carousel -->
+    <nav class="tools-carousel" id="tools-carousel" aria-label="Adjustment Tools">
+      <!-- Generated dynamically in app.js -->
+    </nav>
+
+    <!-- Diagnostics Sub-bar -->
+    <div class="console-diagnostics">
+      <span id="fps-counter">FPS: 60</span>
+      <span id="particle-info">Particles: --</span>
+      <span id="res-info">--</span>
+      <span id="export-msg" class="console-status-msg"></span>
     </div>
   </aside>
 
