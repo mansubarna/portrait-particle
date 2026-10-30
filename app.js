@@ -316,6 +316,19 @@
 
       if (P.mode === 'mono') {
         r = g = b = l;
+      } else if (P.mode === 'cyber') {
+        const c = hsl((l > 120 ? 180 : 305) + (hx[i] / W) * 50, 0.95, 0.15 + 0.65 * (l / 255));
+        r = c[0];
+        g = c[1];
+        b = c[2];
+      } else if (P.mode === 'matrix') {
+        r = l * 0.12;
+        g = Math.min(255, l * 1.55);
+        b = l * 0.22;
+      } else if (P.mode === 'sepia') {
+        r = Math.min(255, l * 1.26);
+        g = Math.min(255, l * 0.98);
+        b = Math.min(255, l * 0.68);
       } else if (P.mode === 'ember') {
         r = l * 1.9;
         g = Math.max(0, l * 1.5 - 60);
@@ -1061,6 +1074,7 @@
         P.mode = btn.dataset.mode;
         syncPaletteChips();
         if (valEl) valEl.textContent = P.mode.toUpperCase();
+        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         recolor();
       });
     });
@@ -1150,12 +1164,7 @@
       });
     }
 
-    // Replay Animation Buttons
-    const consoleReplayBtn = document.getElementById('console-replay-btn');
-    if (consoleReplayBtn) {
-      consoleReplayBtn.addEventListener('click', () => init(false));
-    }
-
+    // Replay Animation Button in bottom actions bar
     const quickReplayBtn = document.getElementById('quick-replay-btn');
     if (quickReplayBtn) {
       quickReplayBtn.addEventListener('click', () => init(false));
@@ -1169,8 +1178,7 @@
       });
     }
 
-    // Customize Console Open / Close Handlers
-    const panelBackdrop = document.getElementById('panel-backdrop');
+    // Customize Console Open / Close Handlers (No dark overlay: Canvas stays 100% visible)
     const closePanelBtn = document.getElementById('close-panel-btn');
     const quickCustomizeBtn = document.getElementById('quick-customize-btn');
 
@@ -1179,7 +1187,6 @@
         panel.classList.remove('collapsed');
         panel.classList.add('open');
       }
-      if (panelBackdrop) panelBackdrop.classList.add('active');
       if (quickCustomizeBtn) quickCustomizeBtn.setAttribute('aria-expanded', 'true');
     }
 
@@ -1188,7 +1195,6 @@
         panel.classList.add('collapsed');
         panel.classList.remove('open');
       }
-      if (panelBackdrop) panelBackdrop.classList.remove('active');
       if (quickCustomizeBtn) quickCustomizeBtn.setAttribute('aria-expanded', 'false');
     }
 
@@ -1207,10 +1213,6 @@
       closePanelBtn.addEventListener('click', closeConsole);
     }
 
-    if (panelBackdrop) {
-      panelBackdrop.addEventListener('click', closeConsole);
-    }
-
     // File Input Handlers
     document.querySelectorAll('input[type="file"]').forEach(inp => {
       inp.addEventListener('change', e => {
@@ -1226,7 +1228,7 @@
 
   // --- Pointer & Input Event Listeners ---
   function setupInputEvents() {
-    const isUIElement = el => el && el.closest && el.closest('#controls, #panel, .panel, .app-header, .render-actions-bar, .motivate-banner, .panel-backdrop, button, input, select, label');
+    const isUIElement = el => el && el.closest && el.closest('#controls, #panel, .panel, .app-header, .render-actions-bar, .motivate-banner, button, input, select, label');
 
     const handlePointerMove = e => {
       if (isUIElement(e.target)) {
