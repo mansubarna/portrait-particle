@@ -37,7 +37,7 @@
     </div>
   </header>
 
-  <!-- Floating Action Bar: Revealed Once Rendered (Customize, Save, Replay) -->
+  <!-- Floating Action Bar: Revealed Once Rendered (Customize, Export, Replay) -->
   <div id="render-actions-bar" class="render-actions-bar hidden" role="toolbar" aria-label="Portrait Actions">
     <button id="quick-customize-btn" class="action-pill action-customize" title="Customize Particles, Physics & Colors" aria-expanded="false">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -47,13 +47,13 @@
       <span>Customize</span>
     </button>
 
-    <button id="quick-save-btn" class="action-pill action-save" title="Save Particle Portrait Image (PNG)">
+    <button id="quick-export-btn" class="action-pill action-export" title="Export Portrait (PNG, Video, Settings)" aria-expanded="false">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
         <polyline points="7 10 12 15 17 10"></polyline>
         <line x1="12" y1="15" x2="12" y2="3"></line>
       </svg>
-      <span>Save</span>
+      <span>Export</span>
     </button>
 
     <button id="quick-replay-btn" class="action-pill action-replay" title="Replay Entrance Animation (Space)">
@@ -63,6 +63,33 @@
       </svg>
       <span>Replay</span>
     </button>
+  </div>
+
+  <!-- Floating Export Panel (Opens directly from the Export action button) -->
+  <div id="export-popup" class="export-popup collapsed" role="dialog" aria-label="Export Options">
+    <div class="export-popup-header">
+      <span class="export-popup-title">Export Portrait</span>
+      <button id="close-export-btn" class="console-icon-btn close-btn" title="Close Export">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="export-popup-body">
+      <div class="export-btn-group">
+        <button type="button" class="chip-btn chip-primary" id="export-png-btn">Export PNG</button>
+        <label class="chip-toggle" title="Save PNG with transparent background">
+          <input type="checkbox" id="transparent-png">
+          <span>Transparent</span>
+        </label>
+      </div>
+      <div class="export-btn-group">
+        <button type="button" class="chip-btn" id="export-webm-btn">Record Video (6s)</button>
+        <button type="button" class="chip-btn" id="export-settings-btn">JSON</button>
+      </div>
+    </div>
+    <div id="export-popup-msg" class="export-popup-msg"></div>
   </div>
 
   <!-- Interactive Customize Console (No Dark Dimmer: Canvas Stays 100% Bright & Visible) -->
@@ -146,19 +173,6 @@
             <input type="range" id="audio-sens-slider" min="0.5" max="3.0" step="0.1" value="1.4" aria-label="Audio Distortion Intensity">
             <span id="audio-sens-val">1.4</span>
           </div>
-        </div>
-      </div>
-
-      <!-- Export & Record View (Active when Export tool is selected) -->
-      <div id="tool-export-view" class="tool-view">
-        <div class="export-inline-bar">
-          <button type="button" class="chip-btn chip-primary" id="export-png-btn">Export PNG</button>
-          <label class="chip-toggle">
-            <input type="checkbox" id="transparent-png">
-            <span>Transparent</span>
-          </label>
-          <button type="button" class="chip-btn" id="export-webm-btn">Record Video (6s)</button>
-          <button type="button" class="chip-btn" id="export-settings-btn">JSON</button>
         </div>
       </div>
     </div>

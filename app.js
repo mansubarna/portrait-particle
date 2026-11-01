@@ -193,12 +193,6 @@
       name: 'Audio React',
       type: 'audio',
       icon: '<svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>'
-    },
-    {
-      id: 'export',
-      name: 'Export',
-      type: 'export',
-      icon: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
     }
   ];
 
@@ -471,13 +465,16 @@
   // --- Utility Functions ---
 
   function showMsg(text, isError = false) {
-    if (!msgEl) return;
-    msgEl.textContent = text;
-    msgEl.style.color = isError ? '#ff6b6b' : '#00d4aa';
-    clearTimeout(msgEl._timer);
-    msgEl._timer = setTimeout(() => {
-      msgEl.textContent = '';
-    }, 4500);
+    const popMsg = document.getElementById('export-popup-msg');
+    [msgEl, popMsg].forEach(el => {
+      if (!el) return;
+      el.textContent = text;
+      el.style.color = isError ? '#ff6b6b' : '#00d4aa';
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => {
+        el.textContent = '';
+      }, 4500);
+    });
   }
 
   function showRenderedActions() {
@@ -1268,7 +1265,6 @@
     const paletteView = document.getElementById('tool-palette-view');
     const canvasView = document.getElementById('tool-canvas-view');
     const audioView = document.getElementById('tool-audio-view');
-    const exportView = document.getElementById('tool-export-view');
     const activeSlider = document.getElementById('active-slider');
     const sliderMinEl = document.getElementById('active-slider-min');
     const sliderMaxEl = document.getElementById('active-slider-max');
@@ -1299,7 +1295,6 @@
       if (paletteView) paletteView.classList.remove('active');
       if (canvasView) canvasView.classList.remove('active');
       if (audioView) audioView.classList.remove('active');
-      if (exportView) exportView.classList.remove('active');
 
       if (tool.type === 'palette') {
         if (labelEl) labelEl.textContent = 'Palette Mode';
@@ -1315,10 +1310,6 @@
         if (valEl) valEl.textContent = audioActive ? audioMode.toUpperCase() : 'OFF';
         if (audioView) audioView.classList.add('active');
         updateAudioUI();
-      } else if (tool.type === 'export') {
-        if (labelEl) labelEl.textContent = 'Export Portrait';
-        if (valEl) valEl.textContent = 'PNG / Video / JSON';
-        if (exportView) exportView.classList.add('active');
       } else {
         // Universal slider tool
         if (labelEl) labelEl.textContent = tool.name;
@@ -1522,11 +1513,47 @@
       quickReplayBtn.addEventListener('click', () => init(false));
     }
 
-    const quickSaveBtn = document.getElementById('quick-save-btn');
-    if (quickSaveBtn) {
-      quickSaveBtn.addEventListener('click', () => {
-        const trans = transCheckbox ? transCheckbox.checked : false;
-        exportPNG(trans);
+    // Floating Export Popup Controls (Replaces former save button & tool card)
+    const exportPopup = document.getElementById('export-popup');
+    const quickExportBtn = document.getElementById('quick-export-btn');
+    const closeExportBtn = document.getElementById('close-export-btn');
+
+    function openExportPopup() {
+      closeConsole(); // Mutually exclusive with customize console
+      if (exportPopup) {
+        exportPopup.classList.remove('collapsed');
+      }
+      if (quickExportBtn) {
+        quickExportBtn.classList.add('active');
+        quickExportBtn.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    function closeExportPopup() {
+      if (exportPopup) {
+        exportPopup.classList.add('collapsed');
+      }
+      if (quickExportBtn) {
+        quickExportBtn.classList.remove('active');
+        quickExportBtn.setAttribute('aria-expanded', 'false');
+      }
+    }
+
+    if (quickExportBtn) {
+      quickExportBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (exportPopup && !exportPopup.classList.contains('collapsed')) {
+          closeExportPopup();
+        } else {
+          openExportPopup();
+        }
+      });
+    }
+
+    if (closeExportBtn) {
+      closeExportBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        closeExportPopup();
       });
     }
 
@@ -1535,11 +1562,15 @@
     const quickCustomizeBtn = document.getElementById('quick-customize-btn');
 
     function openConsole() {
+      closeExportPopup(); // Mutually exclusive with export popup
       if (panel) {
         panel.classList.remove('collapsed');
         panel.classList.add('open');
       }
-      if (quickCustomizeBtn) quickCustomizeBtn.setAttribute('aria-expanded', 'true');
+      if (quickCustomizeBtn) {
+        quickCustomizeBtn.classList.add('active');
+        quickCustomizeBtn.setAttribute('aria-expanded', 'true');
+      }
     }
 
     function closeConsole() {
@@ -1547,7 +1578,10 @@
         panel.classList.add('collapsed');
         panel.classList.remove('open');
       }
-      if (quickCustomizeBtn) quickCustomizeBtn.setAttribute('aria-expanded', 'false');
+      if (quickCustomizeBtn) {
+        quickCustomizeBtn.classList.remove('active');
+        quickCustomizeBtn.setAttribute('aria-expanded', 'false');
+      }
     }
 
     if (quickCustomizeBtn) {
@@ -1580,7 +1614,7 @@
 
   // --- Pointer & Input Event Listeners ---
   function setupInputEvents() {
-    const isUIElement = el => el && el.closest && el.closest('#controls, #panel, .panel, .app-header, .render-actions-bar, .motivate-banner, button, input, select, label');
+    const isUIElement = el => el && el.closest && el.closest('#controls, #panel, .panel, .app-header, .render-actions-bar, .motivate-banner, #export-popup, .export-popup, button, input, select, label');
 
     const handlePointerMove = e => {
       if (isUIElement(e.target)) {
@@ -1598,6 +1632,18 @@
 
     document.addEventListener('mouseleave', () => {
       mx = my = -1e9;
+    });
+
+    // Dismiss export popup when clicking outside
+    document.addEventListener('pointerdown', e => {
+      const exportPopup = document.getElementById('export-popup');
+      const quickExportBtn = document.getElementById('quick-export-btn');
+      if (exportPopup && !exportPopup.classList.contains('collapsed')) {
+        if (!exportPopup.contains(e.target) && (!quickExportBtn || !quickExportBtn.contains(e.target))) {
+          const closeExpBtn = document.getElementById('close-export-btn');
+          if (closeExpBtn) closeExpBtn.click();
+        }
+      }
     });
 
     window.addEventListener('pointerup', e => {
@@ -1687,6 +1733,8 @@
       } else if (e.key === 'Escape') {
         const closeBtn = document.getElementById('close-panel-btn');
         if (closeBtn) closeBtn.click();
+        const closeExpBtn = document.getElementById('close-export-btn');
+        if (closeExpBtn) closeExpBtn.click();
       }
     });
   }

@@ -249,19 +249,27 @@ html, body {
   border-color: rgba(255, 255, 255, 0.16);
 }
 
-.action-customize:hover {
+.action-customize:hover,
+.action-customize.active {
   border-color: var(--cyan);
+  background: rgba(0, 240, 255, 0.14);
   color: var(--cyan);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.22);
 }
 
-/* Save Button */
-.action-save {
-  border-color: rgba(255, 255, 255, 0.16);
-}
-
-.action-save:hover {
-  border-color: var(--accent);
+/* Export Button */
+.action-export {
+  border-color: rgba(0, 212, 170, 0.35);
+  background: rgba(0, 212, 170, 0.08);
   color: var(--accent);
+}
+
+.action-export:hover,
+.action-export.active {
+  border-color: var(--accent);
+  background: rgba(0, 212, 170, 0.2);
+  color: #ffffff;
+  box-shadow: 0 0 16px var(--accent-dim);
 }
 
 /* Replay Button */
@@ -665,13 +673,79 @@ html, body {
   min-width: 22px;
 }
 
-/* Export View */
-.export-inline-bar {
+/* ============================================================
+   Floating Export Popup (Triggered from Export action button)
+   ============================================================ */
+
+.export-popup {
+  position: fixed;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translate(-50%, 0) scale(1);
+  width: calc(100% - 28px);
+  max-width: 360px;
+  background: rgba(14, 14, 24, 0.94);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.75);
+  padding: 14px 16px;
+  z-index: 40;
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1), opacity 260ms ease;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.export-popup.collapsed {
+  transform: translate(-50%, 14px) scale(0.96);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.export-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.export-popup-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.export-popup-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.export-btn-group {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.export-btn-group .chip-btn {
+  flex: 1;
+  text-align: center;
   justify-content: center;
+}
+
+.export-popup-msg {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10px;
+  color: var(--cyan);
+  text-align: center;
+  min-height: 14px;
+  margin-top: 6px;
 }
 
 /* ============================================================
@@ -1114,6 +1188,12 @@ body.drag::after {
   .customize-console {
     max-width: 100%;
     border-radius: 18px 18px 0 0;
+  }
+
+  .export-popup {
+    bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+    width: calc(100% - 20px);
+    max-width: 340px;
   }
 
   .carousel-tool {
