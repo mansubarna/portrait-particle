@@ -257,6 +257,36 @@ html, body {
   box-shadow: 0 0 16px rgba(0, 240, 255, 0.22);
 }
 
+/* Gravity / Gyro Button */
+.action-gyro {
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #cfcfd8;
+  position: relative;
+}
+
+.action-gyro:hover {
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.action-gyro.active {
+  background: linear-gradient(135deg, rgba(0, 212, 170, 0.28) 0%, rgba(126, 231, 255, 0.22) 100%);
+  border-color: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 0 16px var(--accent-dim);
+}
+
+.action-gyro.active svg {
+  color: var(--accent);
+  animation: gyro-tilt-bob 2.4s ease-in-out infinite;
+}
+
+@keyframes gyro-tilt-bob {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  75% { transform: rotate(10deg); }
+}
+
 /* Export Button */
 .action-export {
   border-color: rgba(0, 212, 170, 0.35);
@@ -671,6 +701,156 @@ html, body {
   color: var(--accent);
   font-weight: 700;
   min-width: 22px;
+}
+
+/* Gyroscope Gravity View */
+#tool-gyro-view {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+#tool-gyro-view::-webkit-scrollbar {
+  display: none;
+}
+
+.gyro-controls-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 18px;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+  justify-content: flex-start;
+}
+
+.gyro-controls-inline::-webkit-scrollbar {
+  display: none;
+}
+
+.gyro-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  display: inline-block;
+  margin-right: 5px;
+  transition: all 0.2s ease;
+}
+
+#gyro-toggle-btn.active .gyro-status-dot {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.gyro-modes-group {
+  display: inline-flex;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gyro-modes-group .chip-btn {
+  padding: 4px 10px;
+  font-size: 10.5px;
+}
+
+.gyro-sens-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.gyro-sens-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#gyro-strength-slider {
+  width: 75px;
+  height: 4px;
+}
+
+#gyro-strength-val {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 700;
+  min-width: 22px;
+}
+
+.gyro-tilt-widget {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: crosshair;
+  touch-action: none;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+  margin-left: 2px;
+}
+
+.gyro-tilt-cross {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.gyro-tilt-cross::before,
+.gyro-tilt-cross::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.gyro-tilt-cross::before {
+  top: 50%;
+  left: 4px;
+  right: 4px;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.gyro-tilt-cross::after {
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+.gyro-tilt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+  position: absolute;
+  pointer-events: none;
+  transition: transform 0.05s ease-out;
+  transform: translate(0px, 0px);
 }
 
 /* ============================================================
@@ -1172,17 +1352,18 @@ body.drag::after {
   }
 
   .render-actions-bar {
-    width: calc(100% - 20px);
-    max-width: 420px;
+    width: calc(100% - 16px);
+    max-width: 440px;
     justify-content: space-around;
-    padding: 6px 6px;
+    padding: 6px 4px;
+    gap: 4px;
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
   .action-pill {
-    padding: 8px 10px;
-    font-size: 10px;
-    gap: 5px;
+    padding: 8px 7px;
+    font-size: 9.5px;
+    gap: 4px;
   }
 
   .customize-console {

@@ -10,6 +10,13 @@ Interactive image-to-particle simulation engine with real-time physics, entrance
 - **Staggered Entrance Animation**: Particles spiral in with randomized top-to-bottom delay and condense into the target portrait.
 - **Fluid Hover Interaction**: Smoothstep feathered cursor interaction with fluid upward lift, lateral dispersion, and organic return decay.
 - **Ambient Floating Dust**: Subtle background dust particles that react to cursor proximity with vortex/swirl physics.
+- **Mobile Gyroscope Gravity Physics**:
+  - Real-time device orientation / tilt physics that steer particle gravity dynamically as you tilt your mobile device.
+  - Dual physics modes: **Fluid Flow** (elastic fluid tilt suspension with momentum and wobbling damping) and **Cascade Fall** (free-falling stardust with boundary collision and magnetic recall).
+  - Ambient dust reacts to gravity vectors in unison.
+  - Zero / Calibrate button to center comfortable viewing postures.
+  - Interactive 2D tilt pad widget and Shift+mouse desktop simulation for testing.
+  - iOS 13+ permission support and automatic screen orientation compensation.
 - **Color Palettes**:
   - `Original + Tints`: Preserves input image colors with subtle dynamic chromatic shifts and contrast spread.
   - `Monochrome`: Clean silver/white grayscale luminance.
@@ -42,6 +49,7 @@ python3 -m http.server 8080
 | **Hover / Drag** | Mouse / Touch | Repels and lifts particles fluidly |
 | **Replay Entrance** | `Space` / Replay Button | Re-triggers the staggered spiral assembly |
 | **Toggle Controls** | `C` / Controls Button | Collapses or expands the settings sidebar |
+| **Toggle Gravity** | `G` / Gravity Button | Switches mobile tilt gyroscope physics on/off |
 | **Upload Image** | Drag & Drop / File Button | Load any custom PNG, JPEG, WebP, or AVIF image |
 | **Paste Image** | `Ctrl + V` / `Cmd + V` | Directly paste an image copied to clipboard |
 | **Demo Portrait** | Demo Button | Instantly generates a built-in artistic sample portrait |

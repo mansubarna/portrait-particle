@@ -47,6 +47,16 @@
       <span>Customize</span>
     </button>
 
+    <button id="quick-gyro-btn" class="action-pill action-gyro" title="Toggle Mobile Gyroscope Gravity Physics" aria-pressed="false">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="2" width="14" height="20" rx="3" ry="3"></rect>
+        <circle cx="12" cy="18" r="1" fill="currentColor"></circle>
+        <path d="M2 10l2 2-2 2"></path>
+        <path d="M22 10l-2 2 2 2"></path>
+      </svg>
+      <span>Gravity</span>
+    </button>
+
     <button id="quick-export-btn" class="action-pill action-export" title="Export Portrait (PNG, Video, Settings)" aria-expanded="false">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -172,6 +182,30 @@
             <span class="audio-sens-label">Sens</span>
             <input type="range" id="audio-sens-slider" min="0.5" max="3.0" step="0.1" value="1.4" aria-label="Audio Distortion Intensity">
             <span id="audio-sens-val">1.4</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gyroscope Gravity View (Physics Driven by Device Tilt) -->
+      <div id="tool-gyro-view" class="tool-view">
+        <div class="gyro-controls-inline">
+          <button type="button" class="chip-btn" id="gyro-toggle-btn" title="Toggle Mobile Gyroscope Gravity">
+            <span class="gyro-status-dot"></span>
+            <span id="gyro-toggle-text">Gravity: OFF</span>
+          </button>
+          <div class="gyro-modes-group">
+            <button type="button" class="chip-btn active" data-gyro-mode="fluid" id="gyro-mode-fluid" title="Elastic fluid tilt suspension">Fluid Flow</button>
+            <button type="button" class="chip-btn" data-gyro-mode="cascade" id="gyro-mode-cascade" title="Free-fall particle cascade">Cascade</button>
+          </div>
+          <button type="button" class="chip-btn" id="gyro-calibrate-btn" title="Calibrate current orientation as level center">🎯 Zero</button>
+          <div class="gyro-sens-wrap" title="Gravity Force Intensity">
+            <span class="gyro-sens-label">Force</span>
+            <input type="range" id="gyro-strength-slider" min="0.3" max="3.0" step="0.1" value="1.2" aria-label="Gravity Force Intensity">
+            <span id="gyro-strength-val">1.2</span>
+          </div>
+          <div class="gyro-tilt-widget" id="gyro-tilt-widget" title="Tilt direction indicator (drag to simulate tilt on desktop)">
+            <div class="gyro-tilt-cross"></div>
+            <div class="gyro-tilt-dot" id="gyro-tilt-dot"></div>
           </div>
         </div>
       </div>

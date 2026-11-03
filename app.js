@@ -28,7 +28,10 @@
     mode: 'original',   // 'original', 'mono', 'aurora', 'ember'
     cw: 0,              // Custom canvas width in CSS px (0 = responsive auto)
     ch: 0,              // Custom canvas height in CSS px (0 = responsive auto)
-    fit: 'contain'      // 'contain', 'cover', 'stretch'
+    fit: 'contain',     // 'contain', 'cover', 'stretch'
+    gyroActive: false,  // Mobile gyroscope tilt physics active
+    gyroMode: 'fluid',  // Gravity physics mode ('fluid' or 'cascade')
+    gyroStrength: 1.2   // Gravity acceleration factor (0.3 to 3.0)
   };
 
   const P = { ...DEF };
@@ -193,6 +196,12 @@
       name: 'Audio React',
       type: 'audio',
       icon: '<svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>'
+    },
+    {
+      id: 'gyro',
+      name: 'Gravity',
+      type: 'gyro',
+      icon: '<svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3" ry="3"/><circle cx="12" cy="18" r="1" fill="currentColor"/><path d="M2 10l2 2-2 2"/><path d="M22 10l-2 2 2 2"/></svg>'
     }
   ];
 
@@ -419,6 +428,169 @@
     }
   }
 
+  // --- Mobile Gyroscope Gravity Engine State ---
+  let gyroActive = false;
+  let gyroMode = 'fluid'; // 'fluid' | 'cascade'
+  let gyroStrength = 1.2;
+  let hasDeviceGyro = false;
+  let calibratedBeta = null;
+  let calibratedGamma = null;
+  let lastBeta = 0;
+  let lastGamma = 0;
+  let targetGx = 0;
+  let targetGy = 0;
+  let currentGx = 0;
+  let currentGy = 0;
+  let gyroListenerAttached = false;
+  let gyroTiltDotEl = null;
+
+  function handleOrientation(e) {
+    if (e.beta == null || e.gamma == null) return;
+    hasDeviceGyro = true;
+    lastBeta = e.beta;
+    lastGamma = e.gamma;
+
+    if (calibratedBeta == null) {
+      calibratedBeta = e.beta;
+      calibratedGamma = e.gamma;
+    }
+
+    const pitch = e.beta - calibratedBeta;
+    const roll = e.gamma - (calibratedGamma || 0);
+
+    // Screen orientation angle (portrait vs landscape)
+    let screenAngle = 0;
+    if (window.screen && window.screen.orientation && window.screen.orientation.angle != null) {
+      screenAngle = window.screen.orientation.angle;
+    } else if (typeof window.orientation === 'number') {
+      screenAngle = window.orientation;
+    }
+
+    // Normalized gravity from pitch and roll (-1.0 to 1.0)
+    // 45 degrees tilt corresponds to full 1.0 gravity
+    const maxDeg = 45;
+    const clampedRoll = Math.min(maxDeg, Math.max(-maxDeg, roll));
+    const clampedPitch = Math.min(maxDeg, Math.max(-maxDeg, pitch));
+
+    let rawGx = Math.sin(clampedRoll * (Math.PI / 180)) / Math.sin(maxDeg * (Math.PI / 180));
+    let rawGy = Math.sin(clampedPitch * (Math.PI / 180)) / Math.sin(maxDeg * (Math.PI / 180));
+
+    // Rotate gravity vector according to screen orientation
+    if (screenAngle !== 0) {
+      const rad = -screenAngle * (Math.PI / 180);
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      const rGx = rawGx * cos - rawGy * sin;
+      const rGy = rawGx * sin + rawGy * cos;
+      rawGx = rGx;
+      rawGy = rGy;
+    }
+
+    targetGx = Math.max(-1.5, Math.min(1.5, rawGx));
+    targetGy = Math.max(-1.5, Math.min(1.5, rawGy));
+  }
+
+  async function requestGyroPermission() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const perm = await DeviceOrientationEvent.requestPermission();
+        if (perm === 'granted') {
+          return true;
+        } else {
+          showMsg('Gyroscope permission was denied', true);
+          return false;
+        }
+      } catch (err) {
+        console.warn('Orientation permission error:', err);
+        showMsg('Orientation permission: ' + (err.message || 'error'), true);
+        return false;
+      }
+    }
+    return true; // Android or browsers not requiring permission prompt
+  }
+
+  function attachGyroListener() {
+    if (!gyroListenerAttached) {
+      window.addEventListener('deviceorientation', handleOrientation, true);
+      gyroListenerAttached = true;
+    }
+  }
+
+  async function toggleGyro(forceState) {
+    const shouldEnable = forceState !== undefined ? forceState : !gyroActive;
+    if (shouldEnable) {
+      const granted = await requestGyroPermission();
+      if (!granted) return;
+      attachGyroListener();
+      gyroActive = true;
+      calibratedBeta = null; // Auto-calibrate to current comfortable viewing angle
+      calibratedGamma = null;
+      showMsg('Gravity Physics ON — Tilt mobile to steer particles!');
+      if (hintEl) {
+        hintEl.textContent = 'Tilt device to steer gravity (or drag tilt bubble)';
+        hintEl.style.opacity = '0.9';
+        setTimeout(() => { if (hintEl) hintEl.style.opacity = '0'; }, 4000);
+      }
+    } else {
+      gyroActive = false;
+      targetGx = 0;
+      targetGy = 0;
+      showMsg('Gravity Physics OFF');
+      if (hintEl) {
+        hintEl.textContent = 'Touch or hover over particles to interact';
+      }
+    }
+    updateGyroUI();
+  }
+
+  function calibrateGyro() {
+    calibratedBeta = lastBeta;
+    calibratedGamma = lastGamma;
+    targetGx = 0;
+    targetGy = 0;
+    currentGx = 0;
+    currentGy = 0;
+    showMsg('Gravity orientation zeroed to current angle');
+  }
+
+  function setGyroMode(mode) {
+    gyroMode = mode;
+    updateGyroUI();
+    showMsg(`Gravity Mode: ${mode === 'cascade' ? 'Cascade Fall' : 'Fluid Flow'}`);
+  }
+
+  function updateGyroUI() {
+    const quickGyroBtn = document.getElementById('quick-gyro-btn');
+    if (quickGyroBtn) {
+      quickGyroBtn.classList.toggle('active', gyroActive);
+      quickGyroBtn.setAttribute('aria-pressed', gyroActive ? 'true' : 'false');
+    }
+
+    const gyroToggleBtn = document.getElementById('gyro-toggle-btn');
+    const gyroToggleText = document.getElementById('gyro-toggle-text');
+    if (gyroToggleBtn) {
+      gyroToggleBtn.classList.toggle('active', gyroActive);
+    }
+    if (gyroToggleText) {
+      gyroToggleText.textContent = gyroActive ? 'Gravity: ON' : 'Gravity: OFF';
+    }
+
+    const fluidBtn = document.getElementById('gyro-mode-fluid');
+    const cascadeBtn = document.getElementById('gyro-mode-cascade');
+    if (fluidBtn) fluidBtn.classList.toggle('active', gyroMode === 'fluid');
+    if (cascadeBtn) cascadeBtn.classList.toggle('active', gyroMode === 'cascade');
+
+    const strengthSlider = document.getElementById('gyro-strength-slider');
+    const strengthVal = document.getElementById('gyro-strength-val');
+    if (strengthSlider) strengthSlider.value = gyroStrength;
+    if (strengthVal) strengthVal.textContent = gyroStrength.toFixed(1);
+
+    const valEl = document.getElementById('active-tool-value');
+    if (valEl && activeToolId === 'gyro') {
+      valEl.textContent = gyroActive ? gyroMode.toUpperCase() : 'OFF';
+    }
+  }
+
   // DOM Elements
   const cv = document.getElementById('canvas') || document.getElementById('c');
   const ctx = cv.getContext('2d', { willReadFrequently: true });
@@ -435,7 +607,7 @@
   // Simulation state variables
   let W = 0, H = 0, dpr = 1;
   let n = 0; // Total active particles
-  let hx, hy, ox, oy, al, sd, qq, vv, dl, en;
+  let hx, hy, ox, oy, vx, vy, al, sd, qq, vv, dl, en;
   let r0, g0, b0, cr, cg, cb;
   let buf, imgd, ds = 2;
   let raf = null, fr = 0;
@@ -656,7 +828,7 @@
     const F = () => new Float32Array(maxParticles);
     const U = () => new Uint8Array(maxParticles);
 
-    hx = F(); hy = F(); ox = F(); oy = F(); al = F(); sd = F(); dl = F(); qq = F(); vv = F();
+    hx = F(); hy = F(); ox = F(); oy = F(); vx = F(); vy = F(); al = F(); sd = F(); dl = F(); qq = F(); vv = F();
     en = U(); r0 = U(); g0 = U(); b0 = U(); cr = U(); cg = U(); cb = U();
     n = 0;
 
@@ -804,6 +976,34 @@
       highLevel *= 0.88;
     }
 
+    // Smooth Gyroscope gravity vector towards target
+    if (gyroActive) {
+      currentGx += (targetGx - currentGx) * 0.14;
+      currentGy += (targetGy - currentGy) * 0.14;
+    } else {
+      currentGx += (0 - currentGx) * 0.14;
+      currentGy += (0 - currentGy) * 0.14;
+    }
+
+    const isGyroActive = gyroActive || Math.abs(currentGx) > 0.002 || Math.abs(currentGy) > 0.002;
+    const isCascade = isGyroActive && gyroMode === 'cascade';
+    const gMultiplier = isCascade ? 0.85 : 2.2;
+    const gForce = gyroStrength * gMultiplier * K;
+    const gX = currentGx * gForce;
+    const gY = currentGy * gForce;
+    const kSpring = 0.038 * sp;
+    const fluidDamp = Math.max(0.72, 0.90 - 0.02 * sp);
+    const boundW = W - ds;
+    const boundH = H - ds;
+
+    // Update Gyro visual indicator dot if element present
+    if (gyroTiltDotEl) {
+      const maxOffset = 11;
+      const dotX = currentGx * maxOffset;
+      const dotY = currentGy * maxOffset;
+      gyroTiltDotEl.style.transform = `translate(${dotX.toFixed(1)}px, ${dotY.toFixed(1)}px)`;
+    }
+
     // Particle dynamics
     for (let i = 0; i < n; i++) {
       if (fr < dl[i]) continue;
@@ -828,6 +1028,8 @@
         X += ((s - 0.5) * 60 * K - X) * Math.min(0.5, 0.016 * sp) * f;
         Y *= dec;
         X *= dec;
+        vx[i] *= 0.5;
+        vy[i] *= 0.5;
         a += (tg - a) * Math.min(0.5, (tg < a ? 0.03 : 0.02) * sp);
         if (f > 0.05) en[i] = 0;
       } else if (en[i]) {
@@ -839,6 +1041,55 @@
         Y = ny * 0.955;
         a += (1 - a) * 0.05;
         if (Math.abs(X) + Math.abs(Y) < 1.5) en[i] = 0;
+      } else if (isCascade) {
+        // Free-fall Cascade Physics: particles tumble and pour with gravity
+        const mass = 0.85 + 0.3 * s;
+        let vX = vx[i] + gX * mass;
+        let vY = vy[i] + gY * mass;
+        vX *= 0.96;
+        vY *= 0.96;
+        X += vX;
+        Y += vY;
+
+        // Boundary collisions against stage walls
+        const px = hx[i] + X;
+        const py = hy[i] + Y;
+        if (px < 0) {
+          X = -hx[i];
+          vX = -vX * 0.35;
+        } else if (px > boundW) {
+          X = boundW - hx[i];
+          vX = -vX * 0.35;
+        }
+        if (py < 0) {
+          Y = -hy[i];
+          vY = -vY * 0.35;
+        } else if (py > boundH) {
+          Y = boundH - hy[i];
+          vY = -vY * 0.35;
+        }
+
+        // Gentle magnetic home pull when resting or near level
+        if (Math.abs(currentGx) < 0.08 && Math.abs(currentGy) < 0.08) {
+          vX -= X * 0.015 * sp;
+          vY -= Y * 0.015 * sp;
+        }
+
+        vx[i] = vX;
+        vy[i] = vY;
+        a += (1 - a) * 0.025;
+      } else if (isGyroActive || Math.abs(vx[i]) > 0.01 || Math.abs(vy[i]) > 0.01) {
+        // Fluid Flow Physics: Inertia, Spring Suspension & Fluid Drag
+        const mass = 0.85 + 0.3 * s;
+        let vX = vx[i] + gX * mass - X * kSpring;
+        let vY = vy[i] + gY * mass - Y * kSpring;
+        vX *= fluidDamp;
+        vY *= fluidDamp;
+        X += vX;
+        Y += vY;
+        vx[i] = vX;
+        vy[i] = vY;
+        a += (1 - a) * Math.min(0.5, 0.02 * sp);
       } else {
         // Return to home position
         const dec = 1 - Math.min(0.5, 0.02 * sp);
@@ -909,6 +1160,11 @@
       if (bPulse > 0.1) {
         ux += (Math.random() - 0.5) * bPulse * 0.08;
         uy += (Math.random() - 0.5) * bPulse * 0.08;
+      }
+
+      if (isGyroActive) {
+        ux += currentGx * gyroStrength * 0.18 * K;
+        uy += currentGy * gyroStrength * 0.18 * K;
       }
 
       if (sx > -1e8) {
@@ -1253,6 +1509,9 @@
 
   // --- Export Settings JSON ---
   function exportSettings() {
+    P.gyroActive = gyroActive;
+    P.gyroMode = gyroMode;
+    P.gyroStrength = gyroStrength;
     const jsonStr = JSON.stringify(P, null, 2);
     saveFile('particle-settings.json', new Blob([jsonStr], { type: 'application/json' }));
   }
@@ -1265,6 +1524,8 @@
     const paletteView = document.getElementById('tool-palette-view');
     const canvasView = document.getElementById('tool-canvas-view');
     const audioView = document.getElementById('tool-audio-view');
+    const gyroView = document.getElementById('tool-gyro-view');
+    gyroTiltDotEl = document.getElementById('gyro-tilt-dot');
     const activeSlider = document.getElementById('active-slider');
     const sliderMinEl = document.getElementById('active-slider-min');
     const sliderMaxEl = document.getElementById('active-slider-max');
@@ -1295,6 +1556,7 @@
       if (paletteView) paletteView.classList.remove('active');
       if (canvasView) canvasView.classList.remove('active');
       if (audioView) audioView.classList.remove('active');
+      if (gyroView) gyroView.classList.remove('active');
 
       if (tool.type === 'palette') {
         if (labelEl) labelEl.textContent = 'Palette Mode';
@@ -1310,6 +1572,11 @@
         if (valEl) valEl.textContent = audioActive ? audioMode.toUpperCase() : 'OFF';
         if (audioView) audioView.classList.add('active');
         updateAudioUI();
+      } else if (tool.type === 'gyro') {
+        if (labelEl) labelEl.textContent = 'Tilt Gravity';
+        if (valEl) valEl.textContent = gyroActive ? gyroMode.toUpperCase() : 'OFF';
+        if (gyroView) gyroView.classList.add('active');
+        updateGyroUI();
       } else {
         // Universal slider tool
         if (labelEl) labelEl.textContent = tool.name;
@@ -1479,6 +1746,79 @@
       });
     }
 
+    // Gyroscope Gravity Physics Controls
+    const quickGyroBtn = document.getElementById('quick-gyro-btn');
+    if (quickGyroBtn) {
+      quickGyroBtn.addEventListener('click', () => toggleGyro());
+    }
+
+    const gyroToggleBtn = document.getElementById('gyro-toggle-btn');
+    if (gyroToggleBtn) {
+      gyroToggleBtn.addEventListener('click', () => toggleGyro());
+    }
+
+    const fluidBtn = document.getElementById('gyro-mode-fluid');
+    const cascadeBtn = document.getElementById('gyro-mode-cascade');
+    if (fluidBtn) fluidBtn.addEventListener('click', () => setGyroMode('fluid'));
+    if (cascadeBtn) cascadeBtn.addEventListener('click', () => setGyroMode('cascade'));
+
+    const calibrateBtn = document.getElementById('gyro-calibrate-btn');
+    if (calibrateBtn) calibrateBtn.addEventListener('click', calibrateGyro);
+
+    const gyroStrengthSlider = document.getElementById('gyro-strength-slider');
+    const gyroStrengthVal = document.getElementById('gyro-strength-val');
+    if (gyroStrengthSlider) {
+      gyroStrengthSlider.value = gyroStrength;
+      gyroStrengthSlider.addEventListener('input', () => {
+        gyroStrength = parseFloat(gyroStrengthSlider.value);
+        if (gyroStrengthVal) gyroStrengthVal.textContent = gyroStrength.toFixed(1);
+      });
+    }
+
+    // Interactive 2D Tilt Widget (Simulate tilt by dragging, or visualize live device tilt)
+    const tiltWidget = document.getElementById('gyro-tilt-widget');
+    if (tiltWidget) {
+      let isDraggingWidget = false;
+
+      const handleWidgetPointer = e => {
+        const rect = tiltWidget.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const r = rect.width / 2;
+        const nx = Math.max(-1.5, Math.min(1.5, (e.clientX - cx) / (r * 0.8)));
+        const ny = Math.max(-1.5, Math.min(1.5, (e.clientY - cy) / (r * 0.8)));
+        targetGx = nx;
+        targetGy = ny;
+        if (!gyroActive) {
+          gyroActive = true;
+          updateGyroUI();
+        }
+      };
+
+      tiltWidget.addEventListener('pointerdown', e => {
+        isDraggingWidget = true;
+        tiltWidget.setPointerCapture(e.pointerId);
+        handleWidgetPointer(e);
+      });
+
+      tiltWidget.addEventListener('pointermove', e => {
+        if (isDraggingWidget) handleWidgetPointer(e);
+      });
+
+      const stopWidgetDrag = () => {
+        if (isDraggingWidget) {
+          isDraggingWidget = false;
+          if (!hasDeviceGyro) {
+            targetGx = 0;
+            targetGy = 0;
+          }
+        }
+      };
+
+      tiltWidget.addEventListener('pointerup', stopWidgetDrag);
+      tiltWidget.addEventListener('pointercancel', stopWidgetDrag);
+    }
+
     // Reset All Settings Button (Working with Visual Explosion & Reassembly)
     const resetBtn = document.getElementById('reset-btn');
     if (resetBtn) {
@@ -1496,6 +1836,17 @@
         audioSensitivity = 1.4;
         if (audioSensSlider) audioSensSlider.value = 1.4;
         if (audioSensVal) audioSensVal.textContent = '1.4';
+
+        gyroActive = false;
+        gyroMode = 'fluid';
+        gyroStrength = 1.2;
+        targetGx = 0;
+        targetGy = 0;
+        currentGx = 0;
+        currentGy = 0;
+        calibratedBeta = null;
+        calibratedGamma = null;
+        updateGyroUI();
 
         syncPaletteChips();
         setActiveTool(activeToolId);
@@ -1625,6 +1976,14 @@
       mx = (e.clientX - rect.left) * dpr;
       my = (e.clientY - rect.top) * dpr;
       if (hintEl) hintEl.style.opacity = '0';
+
+      // Desktop tilt simulation when holding Shift while Gyro is active
+      if (e.shiftKey && gyroActive && !hasDeviceGyro) {
+        const normX = (e.clientX / window.innerWidth - 0.5) * 2;
+        const normY = (e.clientY / window.innerHeight - 0.5) * 2;
+        targetGx = Math.max(-1.2, Math.min(1.2, normX * 1.5));
+        targetGy = Math.max(-1.2, Math.min(1.2, normY * 1.5));
+      }
     };
 
     window.addEventListener('pointermove', handlePointerMove);
@@ -1730,6 +2089,8 @@
       } else if (e.key === 'c' || e.key === 'C') {
         const custBtn = document.getElementById('quick-customize-btn');
         if (custBtn) custBtn.click();
+      } else if (e.key === 'g' || e.key === 'G') {
+        toggleGyro();
       } else if (e.key === 'Escape') {
         const closeBtn = document.getElementById('close-panel-btn');
         if (closeBtn) closeBtn.click();
